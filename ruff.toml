@@ -1,0 +1,17 @@
+target-version = "py310"
+line-length = 100
+
+[lint]
+select = [
+    "F", "E", "W", "I", "UP", "ANN"
+]
+ignore = [
+    "ANN201"  # Пропустить отсутствие type hint в некоторых функциях
+]
+
+[lint.per-file-ignores]
+"tests/**/*.py" = ["ANN"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

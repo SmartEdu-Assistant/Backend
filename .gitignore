@@ -1,0 +1,21 @@
+# Виртуальное окружение
+venv/
+.env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+
+# IDE
+.vscode/
+.idea/
+
+# Проект
+*.db
+*.sqlite3
+
+# Package info
+*.egg-info/
+*.egg
