@@ -36,3 +36,8 @@ async def health_check():
     Проверка работоспособности сервера
     """
     return {"status": "healthy", "service": "SmartEdu Assistant"}
+
+
+@app.on_event("startup")
+def on_startup():
+    create_db_and_tables()
