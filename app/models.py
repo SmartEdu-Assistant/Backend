@@ -95,8 +95,10 @@ class TestCase(SQLModel, table=True):
     weight: int
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    assignment: Optional[Assignment] = Relationship(back_populates="test_cases")
-    test_results: list["TestResult"] = Relationship(back_populates="test_case")
+    assignment: Optional[Assignment] = Relationship(
+        back_populates="test_cases")
+    test_results: list["TestResult"] = Relationship(
+        back_populates="test_case")
 
 
 class Submission(SQLModel, table=True):
@@ -110,11 +112,21 @@ class Submission(SQLModel, table=True):
     status: str = Field(max_length=30)    # UPLOADED, CHECKING, DONE, ERROR
     plagiarism_score: Optional[float] = Field(default=None)
 
-    assignment: Optional[Assignment] = Relationship(back_populates="submissions")
-    student: Optional[Student] = Relationship(back_populates="submissions")
-    test_results: list["TestResult"] = Relationship(back_populates="submission")
-    comments: list["Comment"] = Relationship(back_populates="submission")
-    grades: list["Grade"] = Relationship(back_populates="submission")
+    assignment: Optional[Assignment] = Relationship(
+        back_populates="submissions"
+    )
+    student: Optional[Student] = Relationship(
+        back_populates="submissions"
+    )
+    test_results: list["TestResult"] = Relationship(
+        back_populates="submission"
+    )
+    comments: list["Comment"] = Relationship(
+        back_populates="submission"
+    )
+    grades: list["Grade"] = Relationship(
+        back_populates="submission"
+    )
 
 
 class TestResult(SQLModel, table=True):
@@ -127,8 +139,10 @@ class TestResult(SQLModel, table=True):
     execution_time_ms: Optional[int] = Field(default=None)
     error_message: Optional[str] = Field(default=None)
 
-    submission: Optional[Submission] = Relationship(back_populates="test_results")
-    test_case: Optional[TestCase] = Relationship(back_populates="test_results")
+    submission: Optional[Submission] = Relationship(
+        back_populates="test_results")
+    test_case: Optional[TestCase] = Relationship(
+        back_populates="test_results")
 
 
 class PlagiarismReport(SQLModel, table=True):

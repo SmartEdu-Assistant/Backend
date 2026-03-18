@@ -1,17 +1,38 @@
-target-version = "py310"
+target-version = "py313"
 line-length = 100
 
-[lint]
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+target-version = "py313"
+
+[tool.ruff.lint]
+fixable = ["ALL"]
 select = [
-    "F", "E", "W", "I", "UP", "ANN"
-]
-ignore = [
-    "ANN201"  # Пропустить отсутствие type hint в некоторых функциях
+    "E",
+    "F",
+    "FAST",
+    "PL",
+    "I",
+    "ARG",
+    "RET",
+    "ASYNC",
+    "B",
+    "A",
+    "ICN",
+    "SLF",
+    "SIM",
+    "C90",
+    "N",
+    "W"
 ]
 
-[lint.per-file-ignores]
-"tests/**/*.py" = ["ANN"]
-
-[format]
-quote-style = "double"
+[tool.ruff.format]
+quote-style = "single"
 indent-style = "space"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+skip-magic-trailing-comma = false
