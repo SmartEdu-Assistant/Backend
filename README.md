@@ -23,7 +23,7 @@ API подключает корневой `APIRouter` с префиксом `/ap
 
 ## Стек
 
-- Python 3.10+
+- Python 3.13+
 - FastAPI
 - SQLModel
 - SQLAlchemy Async Engine / Async Session
