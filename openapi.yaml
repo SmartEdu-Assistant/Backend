@@ -2,7 +2,6 @@ openapi: 3.0.3
 
 info:
   title: SmartEdu Assistant API
-  description: API for digital assistant for teachers to manage courses, assignments, submissions, plagiarism checks, comments and grades.
   version: 1.0.0
 
 servers:
@@ -10,22 +9,26 @@ servers:
 
 tags:
   - name: Auth
-  - name: Teachers
+  - name: Users
   - name: Courses
   - name: Groups
   - name: Students
   - name: Assignments
+  - name: TestCases
   - name: Submissions
   - name: Comments
   - name: Grades
-  - name: Reports
-  - name: Admin
+  - name: TestResults
+
+security:
+  - OAuth2: []
 
 paths:
+
   /auth/register:
     post:
       tags: [Auth]
-      summary: Регистрация пользователя
+      summary: Register
       requestBody:
         required: true
         content:
@@ -33,25 +36,15 @@ paths:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
       responses:
-        '201':
-          description: User registered successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '409':
-          description: User with this email already exists
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+        '201': { description: Created }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
   /auth/login:
     post:
       tags: [Auth]
-      summary: Вход в систему
+      summary: Login
       requestBody:
         required: true
         content:
@@ -60,147 +53,101 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Login successful
+          description: Access token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: '#/components/schemas/TokenResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
-  /teachers:
+  /auth/me:
     get:
-      tags: [Teachers]
-      summary: Получить список преподавателей
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - in: query
-          name: status
-          schema:
-            type: string
-            enum: [ACTIVE, BLOCKED]
-        - in: query
-          name: search
-          schema:
-            type: string
-          description: Поиск по имени, фамилии или электронной почте
+      tags: [Auth]
+      security:
+        - OAuth2: []
       responses:
         '200':
-          description: Список преподавателей
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TeacherListResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-    post:
-      tags: [Teachers]
-      summary: Создать преподавателя
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TeacherCreateRequest'
-      responses:
-        '201':
-          description: Преподаватель создан
+          description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '409':
-          description: Email уже существует
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
-  /teachers/{teacherId}:
-    get:
-      tags: [Teachers]
-      summary: Получить преподавателя по ID
-      parameters:
-        - $ref: '#/components/parameters/TeacherIdParam'
-      responses:
-        '200':
-          description: Данные преподавателя
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-    put:
-      tags: [Teachers]
-      summary: Обновить преподавателя
-      parameters:
-        - $ref: '#/components/parameters/TeacherIdParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TeacherUpdateRequest'
-      responses:
-        '200':
-          description: Преподаватель обновлен
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
+  /users/{userId}:
     delete:
-      tags: [Teachers]
-      summary: Заблокировать преподавателя
+      tags: [Users]
+      summary: Delete user
+      security:
+        - OAuth2: [users:write]
       parameters:
-        - $ref: '#/components/parameters/TeacherIdParam'
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
       responses:
-        '204':
-          description: Преподаватель заблокирован
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '200':
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+
+  /users/{userId}/role:
+    patch:
+      tags: [Users]
+      summary: Update user role
+      security:
+        - OAuth2: [users:write]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoleRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: integer
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
 
   /courses:
     get:
       tags: [Courses]
-      summary: Получить список курсов
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - in: query
-          name: teacher_id
-          schema:
-            type: integer
-            format: int64
-        - in: query
-          name: is_active
-          schema:
-            type: boolean
-        - in: query
-          name: search
-          schema:
-            type: string
+      security:
+        - OAuth2: [courses:read]
       responses:
         '200':
-          description: Список курсов
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CourseListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseCreateRequest'
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
     post:
       tags: [Courses]
-      summary: Создать курс
+      security:
+        - OAuth2: [courses:write]
       requestBody:
         required: true
         content:
@@ -208,94 +155,59 @@ paths:
             schema:
               $ref: '#/components/schemas/CourseCreateRequest'
       responses:
-        '201':
-          description: Курс создан
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CourseResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        '201': { description: Created }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
   /courses/{courseId}:
-    get:
-      tags: [Courses]
-      summary: Получить курс по ID
-      parameters:
-        - $ref: '#/components/parameters/CourseIdParam'
-      responses:
-        '200':
-          description: Данные курса
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CourseResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-    put:
-      tags: [Courses]
-      summary: Обновить курс
-      parameters:
-        - $ref: '#/components/parameters/CourseIdParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CourseUpdateRequest'
-      responses:
-        '200':
-          description: Курс обновлен
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CourseResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
     delete:
       tags: [Courses]
-      summary: Деактивировать курс
+      summary: Delete course
+      security:
+        - OAuth2: [courses:write]
       parameters:
-        - $ref: '#/components/parameters/CourseIdParam'
-      responses:
-        '204':
-          description: Курс деактивирован
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /groups:
-    get:
-      tags: [Groups]
-      summary: Получить список групп
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - in: query
-          name: course_id
-          schema:
-            type: integer
-            format: int64
-        - in: query
-          name: year
-          schema:
-            type: integer
-        - in: query
-          name: semester
-          schema:
-            type: string
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
       responses:
         '200':
-          description: Groups list
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+
+  /courses/{courseId}/groups:
+    parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
+
+    get:
+      tags: [Groups]
+      security:
+        - OAuth2: [groups:read]
+      
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GroupListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
 
     post:
       tags: [Groups]
-      summary: Создать группу
+      security:
+        - OAuth2: [groups:write]
       requestBody:
         required: true
         content:
@@ -303,84 +215,65 @@ paths:
             schema:
               $ref: '#/components/schemas/GroupCreateRequest'
       responses:
-        '201':
-          description: Группа создана
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GroupResponse'
+        '201': { description: Created }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
-  /groups/{groupId}:
-    get:
-      tags: [Groups]
-      summary: Получить группу по ID
-      parameters:
-        - $ref: '#/components/parameters/GroupIdParam'
-      responses:
-        '200':
-          description: Данные группы
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GroupResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-    put:
-      tags: [Groups]
-      summary: Обновить группу
-      parameters:
-        - $ref: '#/components/parameters/GroupIdParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupUpdateRequest'
-      responses:
-        '200':
-          description: Группа обновлена
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GroupResponse'
-
+  /courses/groups/{groupId}:
     delete:
       tags: [Groups]
-      summary: Удалить группу
+      summary: Delete group
+      security:
+        - OAuth2: [groups:write]
       parameters:
-        - $ref: '#/components/parameters/GroupIdParam'
-      responses:
-        '204':
-          description: Группа удалена
-
-  /students:
-    get:
-      tags: [Students]
-      summary: Получить список студентов
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - in: query
-          name: group_id
-          schema:
-            type: integer
-            format: int64
-        - in: query
-          name: search
-          schema:
-            type: string
+        - name: groupId
+          in: path
+          required: true
+          schema: { type: integer }
       responses:
         '200':
-          description: Список студентов
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /groups/{groupId}/students:
+    parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Students]
+      security:
+        - OAuth2: [students:read]
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StudentListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
 
     post:
       tags: [Students]
-      summary: Создать студента
+      security:
+        - OAuth2: [students:write]
+     
       requestBody:
         required: true
         content:
@@ -388,94 +281,63 @@ paths:
             schema:
               $ref: '#/components/schemas/StudentCreateRequest'
       responses:
-        '201':
-          description: Студент создан
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StudentResponse'
-
-  /students/{studentId}:
-    get:
-      tags: [Students]
-      summary: Получить студента по ID
-      parameters:
-        - $ref: '#/components/parameters/StudentIdParam'
-      responses:
-        '200':
-          description: Данные студента
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StudentResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-    put:
-      tags: [Students]
-      summary: Обновить студента
-      parameters:
-        - $ref: '#/components/parameters/StudentIdParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StudentUpdateRequest'
-      responses:
-        '200':
-          description: Студент обновлен
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StudentResponse'
-
+        '201': { description: Created }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /groups/students/{studentId}:
     delete:
       tags: [Students]
-      summary: Удалить студента
+      summary: Delete student
+      security:
+        - OAuth2: [students:write]
       parameters:
-        - $ref: '#/components/parameters/StudentIdParam'
-      responses:
-        '204':
-          description: Студент удален
-
-  /assignments:
-    get:
-      tags: [Assignments]
-      summary: Получить список заданий
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - in: query
-          name: course_id
-          schema:
-            type: integer
-            format: int64
-        - in: query
-          name: language
-          schema:
-            type: string
-        - in: query
-          name: deadline_from
-          schema:
-            type: string
-            format: date-time
-        - in: query
-          name: deadline_to
-          schema:
-            type: string
-            format: date-time
+        - name: studentId
+          in: path
+          required: true
+          schema: { type: integer }
       responses:
         '200':
-          description: Список заданий
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /courses/{courseId}/assignments:
+    get:
+      tags: [Assignments]
+      security:
+        - OAuth2: [assignments:read]
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AssignmentListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssignmentResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+        
 
     post:
       tags: [Assignments]
-      summary: Создать задание
+      security:
+        - OAuth2: [assignments:write]
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
       requestBody:
         required: true
         content:
@@ -483,90 +345,63 @@ paths:
             schema:
               $ref: '#/components/schemas/AssignmentCreateRequest'
       responses:
-        '201':
-          description: Задание создано
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AssignmentResponse'
+        '201': { description: Created }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
-  /assignments/{assignmentId}:
-    get:
-      tags: [Assignments]
-      summary: Получить задание по ID
-      parameters:
-        - $ref: '#/components/parameters/AssignmentIdParam'
-      responses:
-        '200':
-          description: Данные задания
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AssignmentResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-    put:
-      tags: [Assignments]
-      summary: Обновить задание
-      parameters:
-        - $ref: '#/components/parameters/AssignmentIdParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AssignmentUpdateRequest'
-      responses:
-        '200':
-          description: Задание обновлено
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AssignmentResponse'
-
+  /courses/assignments/{assignmentId}:
     delete:
       tags: [Assignments]
-      summary: Удалить задание
+      summary: Delete assignment
+      security:
+        - OAuth2: [assignments:write]
       parameters:
-        - $ref: '#/components/parameters/AssignmentIdParam'
-      responses:
-        '204':
-          description: Задание удалено
-
-  /submissions:
-    get:
-      tags: [Submissions]
-      summary: Получить список отправок
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - in: query
-          name: assignment_id
-          schema:
-            type: integer
-            format: int64
-        - in: query
-          name: student_id
-          schema:
-            type: integer
-            format: int64
-        - in: query
-          name: status
-          schema:
-            type: string
-            enum: [UPLOADED, CHECKING, DONE, ERROR]
+        - name: assignmentId
+          in: path
+          required: true
+          schema: { type: integer }
       responses:
         '200':
-          description: Список отправок
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /assignments/{assignmentId}/submissions:
+    get:
+      tags: [Submissions]
+      security:
+        - OAuth2: [submissions:read]
+      parameters:
+        - name: assignmentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SubmissionListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubmissionResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
     post:
       tags: [Submissions]
-      summary: Создать отправку
+      security:
+        - OAuth2: [submissions:write]
+      parameters:
+        - name: assignmentId
+          in: path
+          required: true
+          schema: { type: integer }
       requestBody:
         required: true
         content:
@@ -574,86 +409,41 @@ paths:
             schema:
               $ref: '#/components/schemas/SubmissionCreateRequest'
       responses:
-        '201':
-          description: Отправка создана
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SubmissionResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        '201': { description: Created }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
-  /submissions/{submissionId}:
-    get:
+  /assignments/submissions/{submissionId}:
+    delete:
       tags: [Submissions]
-      summary: Получить отправку по ID
+      summary: Delete submission
+      security:
+        - OAuth2: [submissions:write]
       parameters:
-        - $ref: '#/components/parameters/SubmissionIdParam'
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: integer }
       responses:
         '200':
-          description: Данные отправки
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SubmissionDetailsResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
 
-  /submissions/{submissionId}/check:
-    post:
-      tags: [Submissions]
-      summary: Запустить проверку отправки
-      parameters:
-        - $ref: '#/components/parameters/SubmissionIdParam'
-      responses:
-        '202':
-          description: Проверка отправки начата
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AsyncTaskResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /submissions/{submissionId}/comments:
-    get:
-      tags: [Comments]
-      summary: Получить комментарии к отправке
-      parameters:
-        - $ref: '#/components/parameters/SubmissionIdParam'
-      responses:
-        '200':
-          description: Список комментариев
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommentListResponse'
-
-    post:
-      tags: [Comments]
-      summary: Добавить комментарий к отправке
-      parameters:
-        - $ref: '#/components/parameters/SubmissionIdParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CommentCreateRequest'
-      responses:
-        '201':
-          description: Комментарий создан
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommentResponse'
 
   /submissions/{submissionId}/grade:
     put:
       tags: [Grades]
-      summary: Установить или обновить оценку для отправки
+      security:
+        - OAuth2: [grades:write]
       parameters:
-        - $ref: '#/components/parameters/SubmissionIdParam'
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: integer }
       requestBody:
         required: true
         content:
@@ -661,786 +451,436 @@ paths:
             schema:
               $ref: '#/components/schemas/GradeUpsertRequest'
       responses:
+        '200': { description: Updated }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+    get:
+      tags: [Grades]
+      security:
+        - OAuth2: [grade:read]
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
         '200':
-          description: Оценка сохранена
+          description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GradeResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-
-  /assignments/{assignmentId}/journal:
-    get:
-      tags: [Grades]
-      summary: Получить журнал оценок для задания
-      parameters:
-        - $ref: '#/components/parameters/AssignmentIdParam'
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - in: query
-          name: status
-          schema:
-            type: string
-            enum: [UPLOADED, CHECKING, DONE, ERROR]
-      responses:
-        '200':
-          description: Журнал оценок
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JournalResponse'
-
-  /submissions/{submissionId}/plagiarism:
-    get:
-      tags: [Reports]
-      summary: Получить отчет о плагиате для отправки
-      parameters:
-        - $ref: '#/components/parameters/SubmissionIdParam'
-      responses:
-        '200':
-          description: Отчет о плагиате
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PlagiarismReportResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
   /submissions/{submissionId}/test-results:
     get:
-      tags: [Reports]
-      summary: Получить результаты тестов для отправки
+      tags: [TestResults]
+      security:
+        - OAuth2: [testResult:read]
       parameters:
-        - $ref: '#/components/parameters/SubmissionIdParam'
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: integer }
       responses:
         '200':
-          description: Результаты тестов
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TestResultListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestResultResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
-  /admin/statistics:
-    get:
-      tags: [Admin]
-      summary: Получить системную статистику
+
+  /submissions/test-cases/{testCaseId}:
+    parameters:
+      - name: testCaseId
+        in: path
+        required: true
+        schema: { type: integer }
+    delete:
+      tags: [TestCases]
+      summary: Delete test case
+      security:
+        - OAuth2: [testCase:write]
       responses:
         '200':
-          description: Системная статистика
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags: [TestCases]
+      security:
+        - OAuth2: [testCase:read]
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdminStatisticsResponse'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestCaseResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+    post:
+      tags: [TestCases]
+      security:
+        - OAuth2: [testCase:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestCaseCreateRequest'
+      responses:
+        '201': { description: Created }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /submissions/{submissionId}/comments:
+    get:
+      tags: [Comments]
+      security:
+        - OAuth2: [comments:read]
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+
+    post:
+      tags: [Comments]
+      security:
+        - OAuth2: [comments:write]
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentCreateRequest'
+      responses:
+        '201': { description: Created }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+
+  /submissions/comments/{commentId}:
+    delete:
+      tags: [Comments]
+      security:
+        - OAuth2: [comments:write]
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Deleted }
+        '500': { $ref: '#/components/responses/InternalError' }
 
 components:
-  parameters:
-    PageParam:
-      in: query
-      name: page
-      schema:
-        type: integer
-        default: 1
-        minimum: 1
-      description: Page number
 
-    SizeParam:
-      in: query
-      name: size
-      schema:
-        type: integer
-        default: 20
-        minimum: 1
-        maximum: 100
-      description: Page size
-
-    TeacherIdParam:
-      in: path
-      name: teacherId
-      required: true
-      schema:
-        type: integer
-        format: int64
-
-    CourseIdParam:
-      in: path
-      name: courseId
-      required: true
-      schema:
-        type: integer
-        format: int64
-
-    GroupIdParam:
-      in: path
-      name: groupId
-      required: true
-      schema:
-        type: integer
-        format: int64
-
-    StudentIdParam:
-      in: path
-      name: studentId
-      required: true
-      schema:
-        type: integer
-        format: int64
-
-    AssignmentIdParam:
-      in: path
-      name: assignmentId
-      required: true
-      schema:
-        type: integer
-        format: int64
-
-    SubmissionIdParam:
-      in: path
-      name: submissionId
-      required: true
-      schema:
-        type: integer
-        format: int64
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        password:
+          tokenUrl: /auth/login
+          scopes:
+            users:write: Manage users
+            courses:read: Read courses
+            courses:write: Manage courses
+            groups:write: Manage groups
+            students:write: Manage students
+            assignments:write: Manage assignments
+            submissions:write: Submit work
+            grades:write: Manage grades
 
   responses:
-    BadRequest:
-      description: Invalid request data
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
 
     Unauthorized:
-      description: Требуется аутентификация или недействительный токен
+      description: Unauthorized
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
 
     Forbidden:
-      description: Недостаточно прав
+      description: Forbidden
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
 
     NotFound:
-      description: Ресурс не найден
+      description: Not found
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
 
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalError:
+      description: Internal error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+
   schemas:
+    TestCaseCreateRequest:
+      type: object
+      required: [input_data, expected_output, weight]
+      properties:
+        input_data:
+          type: string
+        expected_output:
+          type: string
+        weight:
+          type: integer
+
+    CommentCreateRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        line_number:
+          type: integer
+
+
+    TestCaseResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        assignment_id: { type: integer }
+        input_data: { type: string }
+        expected_output: { type: string }
+        weight: { type: integer }
+
+    CommentResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        submission_id: { type: integer }
+        author_id: { type: integer }
+        content: { type: string }
+        line_number: { type: integer }
+        is_system_generated: { type: boolean }
+
+    GradeResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        submission_id: { type: integer }
+        score: { type: integer }
+        max_score: { type: integer }
+        graded_by: { type: integer }
+        is_published: { type: boolean }
+
+    GroupResponse:
+      description: list of groups
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        semester: { type: string }
+        year: { type: integer }
+        course_id: { type: integer }
+
+    StudentResponse:
+      description: 
+      type: object
+      properties:
+        id: { type: integer }
+        full_name: { type: string }
+        email: { type: string }
+        group_id: { type: integer }
+
+    AssignmentResponse:
+      description: 
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        language: { type: string }
+        max_score: { type: integer }
+        course_id: { type: integer }
+
+    SubmissionResponse:
+      description: 
+      type: object
+      properties:
+        id: { type: integer }
+        assignment_id: { type: integer }
+        student_id: { type: integer }
+        file_path: { type: string }
+        status: { type: string }
+        plagiarism_score: { type: number }
+
+    TestResultResponse:
+      description: 
+      type: object
+      properties:
+        id: { type: integer }
+        test_case_id: { type: integer }
+        passed: { type: boolean }
+        execution_time_ms: { type: integer }
+        error_message: { type: string }
+
     ErrorResponse:
       type: object
       properties:
-        error:
+        message:
+          type: string
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        errors:
           type: object
-          properties:
-            code:
-              type: string
-              example: NOT_FOUND
-            message:
-              type: string
-              example: Resource not found
-            details:
-              type: array
-              items:
-                type: string
-              example: ["Course with id=10 does not exist"]
-      required: [error]
+          additionalProperties:
+            type: string
 
     RegisterRequest:
       type: object
+      required: [email, password, first_name, last_name]
       properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          minLength: 6
-        first_name:
-          type: string
-        last_name:
-          type: string
-        role:
-          type: string
-          enum: [ADMIN, TEACHER]
-      required: [email, password, first_name, last_name, role]
+        email: { type: string }
+        password: { type: string }
+        first_name: { type: string }
+        last_name: { type: string }
 
     LoginRequest:
       type: object
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
       required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
 
-    AuthResponse:
+    TokenResponse:
       type: object
       properties:
-        access_token:
+        access_token: { type: string }
+        token_type: { type: string }
+
+    UpdateRoleRequest:
+      type: object
+      properties:
+        role:
           type: string
-        token_type:
-          type: string
-          example: bearer
-        user:
-          $ref: '#/components/schemas/UserResponse'
-      required: [access_token, token_type, user]
+          enum: [ADMIN, TEACHER]
 
     UserResponse:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        email:
-          type: string
-        first_name:
-          type: string
-        last_name:
-          type: string
-        role:
-          type: string
-          enum: [ADMIN, TEACHER]
-        status:
-          type: string
-          enum: [ACTIVE, BLOCKED]
-        created_at:
-          type: string
-          format: date-time
-      required: [id, email, first_name, last_name, role, status, created_at]
-
-    TeacherCreateRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-        first_name:
-          type: string
-        last_name:
-          type: string
-      required: [email, first_name, last_name]
-
-    TeacherUpdateRequest:
-      type: object
-      properties:
-        first_name:
-          type: string
-        last_name:
-          type: string
+        id: { type: integer }
+        email: { type: string }
+        role: { type: string }
+        first_name: { type: string }
+        last_name: { type: string }
         status:
           type: string
           enum: [ACTIVE, BLOCKED]
 
     CourseCreateRequest:
       type: object
+      required: [title]
       properties:
-        title:
-          type: string
-        description:
-          type: string
-        teacher_id:
-          type: integer
-          format: int64
-        is_active:
-          type: boolean
-      required: [title, teacher_id, is_active]
-
-    CourseUpdateRequest:
-      type: object
-      properties:
-        title:
-          type: string
-        description:
-          type: string
-        is_active:
-          type: boolean
-
-    CourseResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        title:
-          type: string
-        description:
-          type: string
-          nullable: true
-        teacher_id:
-          type: integer
-        created_at:
-          type: string
-          format: date-time
-        is_active:
-          type: boolean
-      required: [id, title, teacher_id, created_at, is_active]
+        title: { type: string }
+        description: { type: string }
 
     GroupCreateRequest:
       type: object
+      required: [name, semester, year]
       properties:
-        name:
-          type: string
-        semester:
-          type: string
-        year:
-          type: integer
-        course_id:
-          type: integer
-      required: [name, semester, year, course_id]
-
-    GroupUpdateRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        semester:
-          type: string
-        year:
-          type: integer
-
-    GroupResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        semester:
-          type: string
-        year:
-          type: integer
-        course_id:
-          type: integer
-        created_at:
-          type: string
-          format: date-time
-      required: [id, name, semester, year, course_id, created_at]
+        name: { type: string }
+        semester: { type: string }
+        year: { type: integer }
 
     StudentCreateRequest:
       type: object
+      required: [full_name]
       properties:
-        full_name:
-          type: string
-        email:
-          type: string
-          format: email
-          nullable: true
-        group_id:
-          type: integer
-      required: [full_name, group_id]
-
-    StudentUpdateRequest:
-      type: object
-      properties:
-        full_name:
-          type: string
-        email:
-          type: string
-          format: email
-          nullable: true
-        group_id:
-          type: integer
-
-    StudentResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        full_name:
-          type: string
-        email:
-          type: string
-          nullable: true
-        group_id:
-          type: integer
-        created_at:
-          type: string
-          format: date-time
-      required: [id, full_name, group_id, created_at]
+        full_name: { type: string }
+        email: { type: string }
 
     AssignmentCreateRequest:
       type: object
+      required: [title, description, language, max_score]
       properties:
-        title:
-          type: string
-        description:
-          type: string
-        language:
-          type: string
-        deadline:
-          type: string
-          format: date-time
-          nullable: true
-        max_score:
-          type: integer
-        reference_solution:
-          type: string
-          nullable: true
-        course_id:
-          type: integer
-      required: [title, description, language, max_score, course_id]
-
-    AssignmentUpdateRequest:
-      type: object
-      properties:
-        title:
-          type: string
-        description:
-          type: string
-        language:
-          type: string
-        deadline:
-          type: string
-          format: date-time
-          nullable: true
-        max_score:
-          type: integer
-        reference_solution:
-          type: string
-          nullable: true
-
-    AssignmentResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        title:
-          type: string
-        description:
-          type: string
-        language:
-          type: string
-        deadline:
-          type: string
-          format: date-time
-          nullable: true
-        max_score:
-          type: integer
-        reference_solution:
-          type: string
-          nullable: true
-        course_id:
-          type: integer
-        created_at:
-          type: string
-          format: date-time
-      required: [id, title, description, language, max_score, course_id, created_at]
+        title: { type: string }
+        description: { type: string }
+        language: { type: string }
+        max_score: { type: integer }
 
     SubmissionCreateRequest:
       type: object
+      required: [student_id, file_path]
       properties:
-        assignment_id:
-          type: integer
-        student_id:
-          type: integer
-        file_path:
-          type: string
-      required: [assignment_id, student_id, file_path]
-
-    SubmissionResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        assignment_id:
-          type: integer
-        student_id:
-          type: integer
-        file_path:
-          type: string
-        submitted_at:
-          type: string
-          format: date-time
-        status:
-          type: string
-          enum: [UPLOADED, CHECKING, DONE, ERROR]
-        plagiarism_score:
-          type: number
-          format: float
-          nullable: true
-      required: [id, assignment_id, student_id, file_path, submitted_at, status]
-
-    SubmissionDetailsResponse:
-      allOf:
-        - $ref: '#/components/schemas/SubmissionResponse'
-        - type: object
-          properties:
-            test_results:
-              type: array
-              items:
-                $ref: '#/components/schemas/TestResultResponse'
-            comments:
-              type: array
-              items:
-                $ref: '#/components/schemas/CommentResponse'
-            grade:
-              nullable: true
-              allOf:
-                - $ref: '#/components/schemas/GradeResponse'
-
-    TestResultResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        test_case_id:
-          type: integer
-        passed:
-          type: boolean
-        execution_time_ms:
-          type: integer
-          nullable: true
-        error_message:
-          type: string
-          nullable: true
-      required: [id, test_case_id, passed]
-
-    TestResultListResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/TestResultResponse'
-      required: [items]
-
-    CommentCreateRequest:
-      type: object
-      properties:
-        content:
-          type: string
-        line_number:
-          type: integer
-          nullable: true
-        is_system_generated:
-          type: boolean
-      required: [content, is_system_generated]
-
-    CommentResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        submission_id:
-          type: integer
-        author_id:
-          type: integer
-        content:
-          type: string
-        line_number:
-          type: integer
-          nullable: true
-        is_system_generated:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
-      required: [id, submission_id, author_id, content, is_system_generated, created_at]
-
-    CommentListResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/CommentResponse'
-      required: [items]
+        student_id: { type: integer }
+        file_path: { type: string }
 
     GradeUpsertRequest:
       type: object
+      required: [score, max_score]
       properties:
-        score:
-          type: integer
-        max_score:
-          type: integer
-        is_published:
-          type: boolean
-      required: [score, max_score, is_published]
-
-    GradeResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        submission_id:
-          type: integer
-        score:
-          type: integer
-        max_score:
-          type: integer
-        graded_by:
-          type: integer
-        graded_at:
-          type: string
-          format: date-time
-        is_published:
-          type: boolean
-      required: [id, submission_id, score, max_score, graded_by, graded_at, is_published]
-
-    PlagiarismReportResponse:
-      type: object
-      properties:
-        submission_id:
-          type: integer
-        compared_with_id:
-          type: integer
-        similarity_percent:
-          type: number
-          format: float
-        detected_blocks:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-      required: [submission_id, compared_with_id, similarity_percent, created_at]
-
-    JournalItemResponse:
-      type: object
-      properties:
-        student_id:
-          type: integer
-        student_name:
-          type: string
-        submission_id:
-          type: integer
-          nullable: true
-        status:
-          type: string
-          nullable: true
-        score:
-          type: integer
-          nullable: true
-        max_score:
-          type: integer
-          nullable: true
-        is_published:
-          type: boolean
-          nullable: true
-      required: [student_id, student_name]
-
-    JournalResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/JournalItemResponse'
-        page:
-          type: integer
-        size:
-          type: integer
-        total:
-          type: integer
-      required: [items, page, size, total]
-
-    AdminStatisticsResponse:
-      type: object
-      properties:
-        active_courses:
-          type: integer
-        teachers_count:
-          type: integer
-        students_count:
-          type: integer
-        submissions_count:
-          type: integer
-        average_score:
-          type: number
-          format: float
-      required: [active_courses, teachers_count, students_count, submissions_count, average_score]
-
-    AsyncTaskResponse:
-      type: object
-      properties:
-        message:
-          type: string
-          example: Submission checking started
-        status:
-          type: string
-          example: CHECKING
-      required: [message, status]
-
-    PaginationMeta:
-      type: object
-      properties:
-        page:
-          type: integer
-        size:
-          type: integer
-        total:
-          type: integer
-      required: [page, size, total]
-
-    TeacherListResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserResponse'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-      required: [items, meta]
-
-    CourseListResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/CourseResponse'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-      required: [items, meta]
-
-    GroupListResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/GroupResponse'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-      required: [items, meta]
-
-    StudentListResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/StudentResponse'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-      required: [items, meta]
-
-    AssignmentListResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/AssignmentResponse'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-      required: [items, meta]
-
-    SubmissionListResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/SubmissionResponse'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-      required: [items, meta]
-      
+        score: { type: integer }
+        max_score: { type: integer }
+        is_published: { type: boolean }

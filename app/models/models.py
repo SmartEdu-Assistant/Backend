@@ -1,13 +1,36 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Generator, Optional
-from sqlmodel import Field, Relationship, Session, SQLModel, create_engine
+from enum import Enum
+from typing import Optional
+
+from sqlmodel import Field, Relationship, SQLModel
 
 
-# -----------------------------
-# Модели таблиц
-# -----------------------------
+class UserRole(str, Enum):
+    ADMIN = "ADMIN"
+    TEACHER = "TEACHER"
+
+
+class UserStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    BLOCKED = "BLOCKED"
+
+
+class CourseTeacherLink(SQLModel, table=True):
+    __tablename__ = "course_teacher_link"
+
+    course_id: Optional[int] = Field(
+        default=None,
+        foreign_key="courses.id",
+        primary_key=True,
+    )
+    user_id: Optional[int] = Field(
+        default=None,
+        foreign_key="users.id",
+        primary_key=True,
+    )
+
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
@@ -17,12 +40,14 @@ class User(SQLModel, table=True):
     password_hash: str = Field(max_length=255)
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
-    role: str = Field(max_length=30)      # ADMIN, TEACHER
-    status: str = Field(max_length=30)    # ACTIVE, BLOCKED
+    role: UserRole = Field(max_length=30)
+    status: UserStatus = Field(max_length=30)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # Один преподаватель может вести много курсов
-    courses: list["Course"] = Relationship(back_populates="teacher")
+    courses: list["Course"] = Relationship(
+        back_populates="teachers",
+        link_model=CourseTeacherLink,
+    )
 
 
 class Course(SQLModel, table=True):
@@ -31,11 +56,13 @@ class Course(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str = Field(max_length=255)
     description: Optional[str] = Field(default=None)
-    teacher_id: int = Field(foreign_key="users.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     is_active: bool = Field(default=True)
 
-    teacher: Optional[User] = Relationship(back_populates="courses")
+    teachers: list[User] = Relationship(
+        back_populates="courses",
+        link_model=CourseTeacherLink,
+    )
     groups: list["Group"] = Relationship(back_populates="course")
     assignments: list["Assignment"] = Relationship(back_populates="course")
 
@@ -95,10 +122,8 @@ class TestCase(SQLModel, table=True):
     weight: int
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    assignment: Optional[Assignment] = Relationship(
-        back_populates="test_cases")
-    test_results: list["TestResult"] = Relationship(
-        back_populates="test_case")
+    assignment: Optional[Assignment] = Relationship(back_populates="test_cases")
+    test_results: list["TestResult"] = Relationship(back_populates="test_case")
 
 
 class Submission(SQLModel, table=True):
@@ -109,24 +134,12 @@ class Submission(SQLModel, table=True):
     student_id: int = Field(foreign_key="students.id")
     file_path: str = Field(max_length=500)
     submitted_at: datetime = Field(default_factory=datetime.utcnow)
-    status: str = Field(max_length=30)    # UPLOADED, CHECKING, DONE, ERROR
-    plagiarism_score: Optional[float] = Field(default=None)
 
-    assignment: Optional[Assignment] = Relationship(
-        back_populates="submissions"
-    )
-    student: Optional[Student] = Relationship(
-        back_populates="submissions"
-    )
-    test_results: list["TestResult"] = Relationship(
-        back_populates="submission"
-    )
-    comments: list["Comment"] = Relationship(
-        back_populates="submission"
-    )
-    grades: list["Grade"] = Relationship(
-        back_populates="submission"
-    )
+    assignment: Optional[Assignment] = Relationship(back_populates="submissions")
+    student: Optional[Student] = Relationship(back_populates="submissions")
+    test_results: list["TestResult"] = Relationship(back_populates="submission")
+    comments: list["Comment"] = Relationship(back_populates="submission")
+    grades: list["Grade"] = Relationship(back_populates="submission")
 
 
 class TestResult(SQLModel, table=True):
@@ -139,10 +152,8 @@ class TestResult(SQLModel, table=True):
     execution_time_ms: Optional[int] = Field(default=None)
     error_message: Optional[str] = Field(default=None)
 
-    submission: Optional[Submission] = Relationship(
-        back_populates="test_results")
-    test_case: Optional[TestCase] = Relationship(
-        back_populates="test_results")
+    submission: Optional[Submission] = Relationship(back_populates="test_results")
+    test_case: Optional[TestCase] = Relationship(back_populates="test_results")
 
 
 class PlagiarismReport(SQLModel, table=True):
@@ -163,7 +174,8 @@ class Comment(SQLModel, table=True):
     submission_id: int = Field(foreign_key="submissions.id")
     author_id: int = Field(foreign_key="users.id")
     content: str
-    line_number: Optional[int] = Field(default=None)
+    start_line_number: Optional[int] = Field(default=None)
+    end_line_number: Optional[int] = Field(default=None)
     is_system_generated: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -182,30 +194,3 @@ class Grade(SQLModel, table=True):
     is_published: bool = Field(default=False)
 
     submission: Optional[Submission] = Relationship(back_populates="grades")
-
-
-# -----------------------------
-# Настройка базы данных
-# -----------------------------
-
-sqlite_file_name = "smartedu.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
-
-engine = create_engine(sqlite_url, echo=True)
-
-
-# -----------------------------
-# Создание таблиц
-# -----------------------------
-
-def create_db_and_tables() -> None:
-    SQLModel.metadata.create_all(engine)
-
-
-# -----------------------------
-# Зависимость для получения сессии
-# -----------------------------
-
-def get_session() -> Generator[Session, None, None]:
-    with Session(engine) as session:
-        yield session

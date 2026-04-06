@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
+from app.db import create_db_and_tables
 from app.routers import items
-
-from app.models import create_db_and_tables
 
 
 @asynccontextmanager
