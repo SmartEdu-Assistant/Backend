@@ -12,7 +12,9 @@ class BaseTableModel(SQLModel):
 
 
 class TimestampedModel(BaseTableModel):
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow, nullable=False
+    )
 
 
 class UserRole(str, Enum):
