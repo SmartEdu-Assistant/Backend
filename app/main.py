@@ -1,38 +1,57 @@
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from app.db import create_db_and_tables
-from app.routers import items
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+from app.core.config import settings
+from app.core.exceptions import DomainValidationError, EntityNotFoundError
+from app.db.base import metadata  # noqa: F401
+from app.routers.api import api_router
+from app.routers.health import router as health_router
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    create_db_and_tables()
+async def lifespan(_: FastAPI):
     yield
 
 
 app = FastAPI(
-    title="SmartEdu Assistant API",
-    version="1.0.0",
-    description="API для цифрового ассистента преподавателя",
-    lifespan=lifespan
+    title=settings.app_name,
+    version=settings.app_version,
+    description=settings.app_description,
+    debug=settings.debug,
+    lifespan=lifespan,
 )
 
-app.include_router(items.router)
+
+@app.exception_handler(EntityNotFoundError)
+async def entity_not_found_exception_handler(
+    _: Request,
+    exc: EntityNotFoundError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=404,
+        content={
+            'detail': f'{exc.entity_name} with id={exc.entity_id} was not found',
+        },
+    )
 
 
-@app.get("/")
-async def root():
-    """
-    Корневой эндпоинт
-    Возвращает приветствие
-    """
-    return {"message": "Hello. This is SmartEdu Assistant"}
+@app.exception_handler(DomainValidationError)
+async def domain_validation_exception_handler(
+    _: Request,
+    exc: DomainValidationError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=400,
+        content={'detail': exc.message},
+    )
 
 
-@app.get("/health")
-async def health_check():
-    """
-    Проверка работоспособности сервера
-    """
-    return {"status": "healthy", "service": "SmartEdu Assistant"}
+app.include_router(health_router)
+app.include_router(api_router)
+
+
+@app.get('/', tags=['root'])
+async def root() -> dict[str, str]:
+    return {'message': 'Hello. This is SmartEdu Assistant'}

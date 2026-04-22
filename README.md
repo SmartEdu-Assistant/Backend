@@ -23,7 +23,7 @@ API подключает корневой `APIRouter` с префиксом `/ap
 
 ## Стек
 
-- Python 3.10+
+- Python 3.13+
 - FastAPI
 - SQLModel
 - SQLAlchemy Async Engine / Async Session
@@ -163,3 +163,13 @@ uv run ruff format .
 ```powershell
 uv run pre-commit run --all-files
 ```
+<<<<<<< Updated upstream
+=======
+
+## Примечания по архитектуре
+
+- Эндпоинты не работают с сессией и репозиториями напрямую, только через сервисы.
+- Сервисы получают репозитории через зависимости и инкапсулируют бизнес-логику.
+- Репозитории отвечают за доступ к БД.
+- Корневой API-роутер подключается с префиксом `/api/v1`.
+>>>>>>> Stashed changes
