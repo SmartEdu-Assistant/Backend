@@ -1,0 +1,886 @@
+openapi: 3.0.3
+
+info:
+  title: SmartEdu Assistant API
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Courses
+  - name: Groups
+  - name: Students
+  - name: Assignments
+  - name: TestCases
+  - name: Submissions
+  - name: Comments
+  - name: Grades
+  - name: TestResults
+
+security:
+  - OAuth2: []
+
+paths:
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201': { description: Created }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      security:
+        - OAuth2: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /users/{userId}:
+    delete:
+      tags: [Users]
+      summary: Delete user
+      security:
+        - OAuth2: [users:write]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+
+  /users/{userId}/role:
+    patch:
+      tags: [Users]
+      summary: Update user role
+      security:
+        - OAuth2: [users:write]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoleRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: integer
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+
+  /courses:
+    get:
+      tags: [Courses]
+      security:
+        - OAuth2: [courses:read]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseCreateRequest'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+    post:
+      tags: [Courses]
+      security:
+        - OAuth2: [courses:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseCreateRequest'
+      responses:
+        '201': { description: Created }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /courses/{courseId}:
+    delete:
+      tags: [Courses]
+      summary: Delete course
+      security:
+        - OAuth2: [courses:write]
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+
+  /courses/{courseId}/groups:
+    parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
+
+    get:
+      tags: [Groups]
+      security:
+        - OAuth2: [groups:read]
+      
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+
+    post:
+      tags: [Groups]
+      security:
+        - OAuth2: [groups:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupCreateRequest'
+      responses:
+        '201': { description: Created }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /courses/groups/{groupId}:
+    delete:
+      tags: [Groups]
+      summary: Delete group
+      security:
+        - OAuth2: [groups:write]
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /groups/{groupId}/students:
+    parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Students]
+      security:
+        - OAuth2: [students:read]
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+
+    post:
+      tags: [Students]
+      security:
+        - OAuth2: [students:write]
+     
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentCreateRequest'
+      responses:
+        '201': { description: Created }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /groups/students/{studentId}:
+    delete:
+      tags: [Students]
+      summary: Delete student
+      security:
+        - OAuth2: [students:write]
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /courses/{courseId}/assignments:
+    get:
+      tags: [Assignments]
+      security:
+        - OAuth2: [assignments:read]
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssignmentResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+        
+
+    post:
+      tags: [Assignments]
+      security:
+        - OAuth2: [assignments:write]
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentCreateRequest'
+      responses:
+        '201': { description: Created }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /courses/assignments/{assignmentId}:
+    delete:
+      tags: [Assignments]
+      summary: Delete assignment
+      security:
+        - OAuth2: [assignments:write]
+      parameters:
+        - name: assignmentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /assignments/{assignmentId}/submissions:
+    get:
+      tags: [Submissions]
+      security:
+        - OAuth2: [submissions:read]
+      parameters:
+        - name: assignmentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubmissionResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+    post:
+      tags: [Submissions]
+      security:
+        - OAuth2: [submissions:write]
+      parameters:
+        - name: assignmentId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionCreateRequest'
+      responses:
+        '201': { description: Created }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /assignments/submissions/{submissionId}:
+    delete:
+      tags: [Submissions]
+      summary: Delete submission
+      security:
+        - OAuth2: [submissions:write]
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+
+  /submissions/{submissionId}/grade:
+    put:
+      tags: [Grades]
+      security:
+        - OAuth2: [grades:write]
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GradeUpsertRequest'
+      responses:
+        '200': { description: Updated }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+    get:
+      tags: [Grades]
+      security:
+        - OAuth2: [grade:read]
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradeResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /submissions/{submissionId}/test-results:
+    get:
+      tags: [TestResults]
+      security:
+        - OAuth2: [testResult:read]
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestResultResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+
+  /submissions/test-cases/{testCaseId}:
+    parameters:
+      - name: testCaseId
+        in: path
+        required: true
+        schema: { type: integer }
+    delete:
+      tags: [TestCases]
+      summary: Delete test case
+      security:
+        - OAuth2: [testCase:write]
+      responses:
+        '200':
+          description: Deleted
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags: [TestCases]
+      security:
+        - OAuth2: [testCase:read]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestCaseResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+    post:
+      tags: [TestCases]
+      security:
+        - OAuth2: [testCase:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestCaseCreateRequest'
+      responses:
+        '201': { description: Created }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /submissions/{submissionId}/comments:
+    get:
+      tags: [Comments]
+      security:
+        - OAuth2: [comments:read]
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+
+    post:
+      tags: [Comments]
+      security:
+        - OAuth2: [comments:write]
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentCreateRequest'
+      responses:
+        '201': { description: Created }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+
+  /submissions/comments/{commentId}:
+    delete:
+      tags: [Comments]
+      security:
+        - OAuth2: [comments:write]
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Deleted }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+components:
+
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        password:
+          tokenUrl: /auth/login
+          scopes:
+            users:write: Manage users
+            courses:read: Read courses
+            courses:write: Manage courses
+            groups:write: Manage groups
+            students:write: Manage students
+            assignments:write: Manage assignments
+            submissions:write: Submit work
+            grades:write: Manage grades
+
+  responses:
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalError:
+      description: Internal error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+
+  schemas:
+    TestCaseCreateRequest:
+      type: object
+      required: [input_data, expected_output, weight]
+      properties:
+        input_data:
+          type: string
+        expected_output:
+          type: string
+        weight:
+          type: integer
+
+    CommentCreateRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        line_number:
+          type: integer
+
+
+    TestCaseResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        assignment_id: { type: integer }
+        input_data: { type: string }
+        expected_output: { type: string }
+        weight: { type: integer }
+
+    CommentResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        submission_id: { type: integer }
+        author_id: { type: integer }
+        content: { type: string }
+        line_number: { type: integer }
+        is_system_generated: { type: boolean }
+
+    GradeResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        submission_id: { type: integer }
+        score: { type: integer }
+        max_score: { type: integer }
+        graded_by: { type: integer }
+        is_published: { type: boolean }
+
+    GroupResponse:
+      description: list of groups
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        semester: { type: string }
+        year: { type: integer }
+        course_id: { type: integer }
+
+    StudentResponse:
+      description: 
+      type: object
+      properties:
+        id: { type: integer }
+        full_name: { type: string }
+        email: { type: string }
+        group_id: { type: integer }
+
+    AssignmentResponse:
+      description: 
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        language: { type: string }
+        max_score: { type: integer }
+        course_id: { type: integer }
+
+    SubmissionResponse:
+      description: 
+      type: object
+      properties:
+        id: { type: integer }
+        assignment_id: { type: integer }
+        student_id: { type: integer }
+        file_path: { type: string }
+        status: { type: string }
+        plagiarism_score: { type: number }
+
+    TestResultResponse:
+      description: 
+      type: object
+      properties:
+        id: { type: integer }
+        test_case_id: { type: integer }
+        passed: { type: boolean }
+        execution_time_ms: { type: integer }
+        error_message: { type: string }
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+
+    RegisterRequest:
+      type: object
+      required: [email, password, first_name, last_name]
+      properties:
+        email: { type: string }
+        password: { type: string }
+        first_name: { type: string }
+        last_name: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token: { type: string }
+        token_type: { type: string }
+
+    UpdateRoleRequest:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [ADMIN, TEACHER]
+
+    UserResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        email: { type: string }
+        role: { type: string }
+        first_name: { type: string }
+        last_name: { type: string }
+        status:
+          type: string
+          enum: [ACTIVE, BLOCKED]
+
+    CourseCreateRequest:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        description: { type: string }
+
+    GroupCreateRequest:
+      type: object
+      required: [name, semester, year]
+      properties:
+        name: { type: string }
+        semester: { type: string }
+        year: { type: integer }
+
+    StudentCreateRequest:
+      type: object
+      required: [full_name]
+      properties:
+        full_name: { type: string }
+        email: { type: string }
+
+    AssignmentCreateRequest:
+      type: object
+      required: [title, description, language, max_score]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        language: { type: string }
+        max_score: { type: integer }
+
+    SubmissionCreateRequest:
+      type: object
+      required: [student_id, file_path]
+      properties:
+        student_id: { type: integer }
+        file_path: { type: string }
+
+    GradeUpsertRequest:
+      type: object
+      required: [score, max_score]
+      properties:
+        score: { type: integer }
+        max_score: { type: integer }
+        is_published: { type: boolean }
