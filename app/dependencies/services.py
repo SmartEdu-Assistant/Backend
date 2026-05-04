@@ -1,19 +1,8 @@
+from typing import Annotated
+
 from fastapi import Depends
 
 from app.dependencies.repositories import (
-    get_assignment_repository,
-    get_comment_repository,
-    get_course_repository,
-    get_grade_repository,
-    get_group_repository,
-    get_plagiarism_report_repository,
-    get_student_repository,
-    get_submission_repository,
-    get_test_case_repository,
-    get_test_result_repository,
-    get_user_repository,
-)
-from app.repositories import (
     AssignmentRepository,
     CommentRepository,
     CourseRepository,
@@ -40,69 +29,84 @@ from app.services import (
     UserService,
 )
 
+UserRepositoryDep = Annotated[UserRepository, Depends(UserRepository)]
+CourseRepositoryDep = Annotated[CourseRepository, Depends(CourseRepository)]
+GroupRepositoryDep = Annotated[GroupRepository, Depends(GroupRepository)]
+StudentRepositoryDep = Annotated[StudentRepository, Depends(StudentRepository)]
+AssignmentRepositoryDep = Annotated[AssignmentRepository, Depends(AssignmentRepository)]
+TestCaseRepositoryDep = Annotated[TestCaseRepository, Depends(TestCaseRepository)]
+SubmissionRepositoryDep = Annotated[SubmissionRepository, Depends(SubmissionRepository)]
+TestResultRepositoryDep = Annotated[TestResultRepository, Depends(TestResultRepository)]
+CommentRepositoryDep = Annotated[CommentRepository, Depends(CommentRepository)]
+GradeRepositoryDep = Annotated[GradeRepository, Depends(GradeRepository)]
+PlagiarismReportRepositoryDep = Annotated[
+    PlagiarismReportRepository,
+    Depends(PlagiarismReportRepository),
+]
+
 
 def get_user_service(
-    repository: UserRepository = Depends(get_user_repository),
+    repository: UserRepositoryDep,
 ) -> UserService:
     return UserService(repository)
 
 
 def get_course_service(
-    repository: CourseRepository = Depends(get_course_repository),
-    user_repository: UserRepository = Depends(get_user_repository),
+    repository: CourseRepositoryDep,
+    user_repository: UserRepositoryDep,
 ) -> CourseService:
     return CourseService(repository, user_repository)
 
 
 def get_group_service(
-    repository: GroupRepository = Depends(get_group_repository),
+    repository: GroupRepositoryDep,
 ) -> GroupService:
     return GroupService(repository)
 
 
 def get_student_service(
-    repository: StudentRepository = Depends(get_student_repository),
+    repository: StudentRepositoryDep,
 ) -> StudentService:
     return StudentService(repository)
 
 
 def get_assignment_service(
-    repository: AssignmentRepository = Depends(get_assignment_repository),
+    repository: AssignmentRepositoryDep,
 ) -> AssignmentService:
     return AssignmentService(repository)
 
 
 def get_test_case_service(
-    repository: TestCaseRepository = Depends(get_test_case_repository),
+    repository: TestCaseRepositoryDep,
 ) -> TestCaseService:
     return TestCaseService(repository)
 
 
 def get_submission_service(
-    repository: SubmissionRepository = Depends(get_submission_repository),
+    repository: SubmissionRepositoryDep,
 ) -> SubmissionService:
     return SubmissionService(repository)
 
 
 def get_test_result_service(
-    repository: TestResultRepository = Depends(get_test_result_repository),
+    repository: TestResultRepositoryDep,
 ) -> TestResultService:
     return TestResultService(repository)
 
 
 def get_comment_service(
-    repository: CommentRepository = Depends(get_comment_repository),
+    repository: CommentRepositoryDep,
 ) -> CommentService:
     return CommentService(repository)
 
 
 def get_grade_service(
-    repository: GradeRepository = Depends(get_grade_repository),
+    repository: GradeRepositoryDep,
 ) -> GradeService:
     return GradeService(repository)
 
 
 def get_plagiarism_report_service(
-    repository: PlagiarismReportRepository = Depends(get_plagiarism_report_repository),
+    repository: PlagiarismReportRepositoryDep,
 ) -> PlagiarismReportService:
     return PlagiarismReportService(repository)

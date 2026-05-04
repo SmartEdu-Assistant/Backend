@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import Annotated, Generic, TypeVar
 
+from fastapi import Depends
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.dependencies.db import get_session
 
 ModelT = TypeVar('ModelT', bound=SQLModel)
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 class BaseRepository(Generic[ModelT]):
     model: type[ModelT]
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: SessionDep) -> None:
         self.session = session
 
     async def list(self) -> list[ModelT]:
@@ -26,7 +29,8 @@ class BaseRepository(Generic[ModelT]):
         if not entity_ids:
             return []
 
-        result = await self.session.exec(select(self.model).where(self.model.id.in_(entity_ids)))
+        statement = select(self.model).where(self.model.id.in_(entity_ids))
+        result = await self.session.exec(statement)
         return list(result.all())
 
     async def create(self, payload: dict) -> ModelT:

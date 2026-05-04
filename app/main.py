@@ -1,11 +1,10 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
 
+import app.models  # noqa: F401
 from app.core.config import settings
-from app.core.exceptions import DomainValidationError, EntityNotFoundError
-from app.db.base import metadata  # noqa: F401
+from app.core.exception_handlers import register_exception_handlers
 from app.routers.api import api_router
 from app.routers.health import router as health_router
 
@@ -16,38 +15,14 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title=settings.app_name,
-    version=settings.app_version,
-    description=settings.app_description,
-    debug=settings.debug,
+    title=settings.app.name,
+    version=settings.app.version,
+    description=settings.app.description,
+    debug=settings.app.debug,
     lifespan=lifespan,
 )
 
-
-@app.exception_handler(EntityNotFoundError)
-async def entity_not_found_exception_handler(
-    _: Request,
-    exc: EntityNotFoundError,
-) -> JSONResponse:
-    return JSONResponse(
-        status_code=404,
-        content={
-            'detail': f'{exc.entity_name} with id={exc.entity_id} was not found',
-        },
-    )
-
-
-@app.exception_handler(DomainValidationError)
-async def domain_validation_exception_handler(
-    _: Request,
-    exc: DomainValidationError,
-) -> JSONResponse:
-    return JSONResponse(
-        status_code=400,
-        content={'detail': exc.message},
-    )
-
-
+register_exception_handlers(app)
 app.include_router(health_router)
 app.include_router(api_router)
 

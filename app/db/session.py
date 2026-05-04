@@ -5,10 +5,9 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.config import settings
 
-
 engine: AsyncEngine = create_async_engine(
-    settings.database_url,
-    echo=settings.db_echo,
+    settings.db.database_url,
+    echo=settings.db.echo,
     future=True,
 )
 

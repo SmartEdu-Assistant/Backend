@@ -13,8 +13,7 @@ from app.routers.test_cases import router as test_cases_router
 from app.routers.test_results import router as test_results_router
 from app.routers.users import router as users_router
 
-
-api_router = APIRouter(prefix=settings.api_v1_prefix)
+api_router = APIRouter(prefix=settings.app.api_v1_prefix)
 api_router.include_router(users_router)
 api_router.include_router(courses_router)
 api_router.include_router(groups_router)
