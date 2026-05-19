@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
 from typing import Optional
 
+from pydantic import ConfigDict
 from sqlmodel import Field, SQLModel
 
 
@@ -11,17 +11,17 @@ class BaseTableModel(SQLModel):
     id: Optional[int] = Field(default=None, primary_key=True)
 
 
+class ORMBaseSchema(SQLModel):
+    model_config = ConfigDict(from_attributes=True)
+
+
 class TimestampedModel(BaseTableModel):
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, nullable=False
+        default_factory=datetime.utcnow,
+        nullable=False,
     )
-
-
-class UserRole(str, Enum):
-    ADMIN = 'ADMIN'
-    TEACHER = 'TEACHER'
-
-
-class UserStatus(str, Enum):
-    ACTIVE = 'ACTIVE'
-    BLOCKED = 'BLOCKED'
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        nullable=False,
+        sa_column_kwargs={'onupdate': datetime.utcnow},
+    )

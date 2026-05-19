@@ -3,12 +3,13 @@ from __future__ import annotations
 from typing import Annotated, Generic, TypeVar
 
 from fastapi import Depends
-from sqlmodel import SQLModel, select
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.dependencies.db import get_session
+from app.models.base import BaseTableModel
 
-ModelT = TypeVar('ModelT', bound=SQLModel)
+ModelT = TypeVar('ModelT', bound=BaseTableModel)
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 

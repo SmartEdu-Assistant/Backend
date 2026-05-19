@@ -1,17 +1,10 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 
-import app.models  # noqa: F401
 from app.core.config import settings
+from app.db import metadata
 from app.core.exception_handlers import register_exception_handlers
 from app.routers.api import api_router
 from app.routers.health import router as health_router
-
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    yield
 
 
 app = FastAPI(
@@ -19,8 +12,8 @@ app = FastAPI(
     version=settings.app.version,
     description=settings.app.description,
     debug=settings.app.debug,
-    lifespan=lifespan,
 )
+app.state.metadata = metadata
 
 register_exception_handlers(app)
 app.include_router(health_router)

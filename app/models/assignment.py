@@ -3,24 +3,29 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlmodel import Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import TimestampedModel
+from app.models.base import ORMBaseSchema, TimestampedModel
 
 if TYPE_CHECKING:
     from app.models.course import Course
-    from app.models.submission import Submission, TestResult
+    from app.models.submission import Submission
+    from app.models.test_case import TestCase
 
 
-class Assignment(TimestampedModel, table=True):
-    __tablename__ = 'assignments'
-
+class AssignmentBase(SQLModel):
     title: str = Field(max_length=255)
     description: str
     language: str = Field(max_length=50)
-    deadline: Optional[datetime] = Field(default=None)
+    deadline: Optional[datetime] = None
     max_score: int
     reference_solution: Optional[str] = Field(default=None, max_length=500)
+    course_id: int
+
+
+class Assignment(AssignmentBase, TimestampedModel, table=True):
+    __tablename__ = 'assignments'
+
     course_id: int = Field(foreign_key='courses.id')
 
     course: Optional['Course'] = Relationship(back_populates='assignments')
@@ -28,13 +33,25 @@ class Assignment(TimestampedModel, table=True):
     submissions: list['Submission'] = Relationship(back_populates='assignment')
 
 
-class TestCase(TimestampedModel, table=True):
-    __tablename__ = 'test_cases'
+class AssignmentCreate(AssignmentBase):
+    pass
 
-    assignment_id: int = Field(foreign_key='assignments.id')
-    input_data: str
-    expected_output: str
-    weight: int
 
-    assignment: Optional[Assignment] = Relationship(back_populates='test_cases')
-    test_results: list['TestResult'] = Relationship(back_populates='test_case')
+class AssignmentUpdate(SQLModel):
+    title: Optional[str] = Field(default=None, max_length=255)
+    description: Optional[str] = None
+    language: Optional[str] = Field(default=None, max_length=50)
+    deadline: Optional[datetime] = None
+    max_score: Optional[int] = None
+    reference_solution: Optional[str] = Field(default=None, max_length=500)
+    course_id: Optional[int] = None
+
+
+class AssignmentDelete(SQLModel):
+    id: int
+
+
+class AssignmentPublic(AssignmentBase, ORMBaseSchema):
+    id: int
+    created_at: datetime
+    updated_at: datetime

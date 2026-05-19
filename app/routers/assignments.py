@@ -1,22 +1,21 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, status
 
-from app.dependencies.services import get_assignment_service
+from app.dependencies.services import AssignmentServiceDep
 from app.schemas import AssignmentCreate, AssignmentPublic, AssignmentUpdate
-from app.services import AssignmentService
 
 
 router = APIRouter(prefix='/assignments', tags=['assignments'])
 
 
 @router.get('/', response_model=list[AssignmentPublic])
-async def list_assignments(service: AssignmentService = Depends(get_assignment_service)):
+async def list_assignments(service: AssignmentServiceDep):
     return await service.list()
 
 
 @router.get('/{assignment_id}', response_model=AssignmentPublic)
 async def get_assignment(
     assignment_id: int,
-    service: AssignmentService = Depends(get_assignment_service),
+    service: AssignmentServiceDep,
 ):
     return await service.get(assignment_id)
 
@@ -24,7 +23,7 @@ async def get_assignment(
 @router.post('/', response_model=AssignmentPublic, status_code=status.HTTP_201_CREATED)
 async def create_assignment(
     payload: AssignmentCreate,
-    service: AssignmentService = Depends(get_assignment_service),
+    service: AssignmentServiceDep,
 ):
     return await service.create(payload)
 
@@ -33,7 +32,7 @@ async def create_assignment(
 async def update_assignment(
     assignment_id: int,
     payload: AssignmentUpdate,
-    service: AssignmentService = Depends(get_assignment_service),
+    service: AssignmentServiceDep,
 ):
     return await service.update(assignment_id, payload)
 
@@ -41,6 +40,6 @@ async def update_assignment(
 @router.delete('/{assignment_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_assignment(
     assignment_id: int,
-    service: AssignmentService = Depends(get_assignment_service),
+    service: AssignmentServiceDep,
 ):
     await service.delete(assignment_id)

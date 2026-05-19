@@ -1,23 +1,26 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlmodel import Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import TimestampedModel
+from app.models.base import ORMBaseSchema, TimestampedModel
 from app.models.user import CourseTeacherLink, User
 
 if TYPE_CHECKING:
     from app.models.assignment import Assignment
-    from app.models.student import Group
+    from app.models.group import Group
 
 
-class Course(TimestampedModel, table=True):
-    __tablename__ = 'courses'
-
+class CourseBase(SQLModel):
     title: str = Field(max_length=255)
-    description: Optional[str] = Field(default=None)
-    is_active: bool = Field(default=True)
+    description: Optional[str] = None
+    is_active: bool = True
+
+
+class Course(CourseBase, TimestampedModel, table=True):
+    __tablename__ = 'courses'
 
     teachers: list[User] = Relationship(
         back_populates='courses',
@@ -25,3 +28,24 @@ class Course(TimestampedModel, table=True):
     )
     groups: list['Group'] = Relationship(back_populates='course')
     assignments: list['Assignment'] = Relationship(back_populates='course')
+
+
+class CourseCreate(CourseBase):
+    teacher_ids: list[int] = Field(default_factory=list)
+
+
+class CourseUpdate(SQLModel):
+    title: Optional[str] = Field(default=None, max_length=255)
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+    teacher_ids: Optional[list[int]] = None
+
+
+class CourseDelete(SQLModel):
+    id: int
+
+
+class CoursePublic(CourseBase, ORMBaseSchema):
+    id: int
+    created_at: datetime
+    updated_at: datetime

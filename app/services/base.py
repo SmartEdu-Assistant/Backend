@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel
-from sqlmodel import SQLModel
 
 from app.core.exceptions import EntityNotFoundError
+from app.models.base import BaseTableModel
 from app.repositories.base import BaseRepository
 
 
-ModelT = TypeVar('ModelT', bound=SQLModel)
+ModelT = TypeVar('ModelT', bound=BaseTableModel)
 CreateSchemaT = TypeVar('CreateSchemaT', bound=BaseModel)
 UpdateSchemaT = TypeVar('UpdateSchemaT', bound=BaseModel)
 

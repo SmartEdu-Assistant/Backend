@@ -1,24 +1,25 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, status
 
-from app.dependencies.services import get_plagiarism_report_service
-from app.schemas import PlagiarismReportCreate, PlagiarismReportPublic, PlagiarismReportUpdate
-from app.services import PlagiarismReportService
+from app.dependencies.services import PlagiarismReportServiceDep
+from app.schemas import (
+    PlagiarismReportCreate,
+    PlagiarismReportPublic,
+    PlagiarismReportUpdate,
+)
 
 
 router = APIRouter(prefix='/plagiarism-reports', tags=['plagiarism-reports'])
 
 
 @router.get('/', response_model=list[PlagiarismReportPublic])
-async def list_plagiarism_reports(
-    service: PlagiarismReportService = Depends(get_plagiarism_report_service),
-):
+async def list_plagiarism_reports(service: PlagiarismReportServiceDep):
     return await service.list()
 
 
 @router.get('/{report_id}', response_model=PlagiarismReportPublic)
 async def get_plagiarism_report(
     report_id: int,
-    service: PlagiarismReportService = Depends(get_plagiarism_report_service),
+    service: PlagiarismReportServiceDep,
 ):
     return await service.get(report_id)
 
@@ -26,7 +27,7 @@ async def get_plagiarism_report(
 @router.post('/', response_model=PlagiarismReportPublic, status_code=status.HTTP_201_CREATED)
 async def create_plagiarism_report(
     payload: PlagiarismReportCreate,
-    service: PlagiarismReportService = Depends(get_plagiarism_report_service),
+    service: PlagiarismReportServiceDep,
 ):
     return await service.create(payload)
 
@@ -35,7 +36,7 @@ async def create_plagiarism_report(
 async def update_plagiarism_report(
     report_id: int,
     payload: PlagiarismReportUpdate,
-    service: PlagiarismReportService = Depends(get_plagiarism_report_service),
+    service: PlagiarismReportServiceDep,
 ):
     return await service.update(report_id, payload)
 
@@ -43,6 +44,6 @@ async def update_plagiarism_report(
 @router.delete('/{report_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_plagiarism_report(
     report_id: int,
-    service: PlagiarismReportService = Depends(get_plagiarism_report_service),
+    service: PlagiarismReportServiceDep,
 ):
     await service.delete(report_id)
