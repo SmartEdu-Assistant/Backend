@@ -1,18 +1,23 @@
-from typing import Generator
+from collections.abc import AsyncGenerator
 
-from sqlmodel import SQLModel, Session, create_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.core.config import settings
+
+engine: AsyncEngine = create_async_engine(
+    settings.db.database_url,
+    echo=settings.db.echo,
+    future=True,
+)
+
+AsyncSessionFactory = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)
 
 
-sqlite_file_name = "smartedu.sqlite3"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
-
-engine = create_engine(sqlite_url, echo=True)
-
-
-def create_db_and_tables() -> None:
-    SQLModel.metadata.create_all(engine)
-
-
-def get_session() -> Generator[Session, None, None]:
-    with Session(engine) as session:
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSessionFactory() as session:
         yield session

@@ -1,38 +1,25 @@
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
 
-from app.db import create_db_and_tables
-from app.routers import items
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    create_db_and_tables()
-    yield
+from app.core.config import settings
+from app.db import metadata
+from app.core.exception_handlers import register_exception_handlers
+from app.routers.api import api_router
+from app.routers.health import router as health_router
 
 
 app = FastAPI(
-    title="SmartEdu Assistant API",
-    version="1.0.0",
-    description="API для цифрового ассистента преподавателя",
-    lifespan=lifespan
+    title=settings.app.name,
+    version=settings.app.version,
+    description=settings.app.description,
+    debug=settings.app.debug,
 )
+app.state.metadata = metadata
 
-app.include_router(items.router)
-
-
-@app.get("/")
-async def root():
-    """
-    Корневой эндпоинт
-    Возвращает приветствие
-    """
-    return {"message": "Hello. This is SmartEdu Assistant"}
+register_exception_handlers(app)
+app.include_router(health_router)
+app.include_router(api_router)
 
 
-@app.get("/health")
-async def health_check():
-    """
-    Проверка работоспособности сервера
-    """
-    return {"status": "healthy", "service": "SmartEdu Assistant"}
+@app.get('/', tags=['root'])
+async def root() -> dict[str, str]:
+    return {'message': 'Hello. This is SmartEdu Assistant'}
