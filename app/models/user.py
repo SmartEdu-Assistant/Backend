@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import ORMBaseSchema, TimestampedModel
+from app.models.base import BaseDeleteSchema, TimestampedModel, TimestampedPublicSchema
 
 if TYPE_CHECKING:
     from app.models.comment import Comment
@@ -69,16 +68,12 @@ class UserUpdate(SQLModel):
     email: Optional[str] = Field(default=None, max_length=255)
     first_name: Optional[str] = Field(default=None, max_length=100)
     last_name: Optional[str] = Field(default=None, max_length=100)
-    role: Optional[UserRole] = None
     status: Optional[UserStatus] = None
-    password: Optional[str] = Field(default=None, min_length=8, max_length=255)
 
 
-class UserDelete(SQLModel):
-    id: int
+class UserDelete(BaseDeleteSchema):
+    pass
 
 
-class UserPublic(UserBase, ORMBaseSchema):
-    id: int
-    created_at: datetime
-    updated_at: datetime
+class UserPublic(UserBase, TimestampedPublicSchema):
+    pass

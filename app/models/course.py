@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import ORMBaseSchema, TimestampedModel
+from app.models.base import BaseDeleteSchema, TimestampedModel, TimestampedPublicSchema
 from app.models.user import CourseTeacherLink, User
 
 if TYPE_CHECKING:
@@ -41,11 +40,9 @@ class CourseUpdate(SQLModel):
     teacher_ids: Optional[list[int]] = None
 
 
-class CourseDelete(SQLModel):
-    id: int
+class CourseDelete(BaseDeleteSchema):
+    pass
 
 
-class CoursePublic(CourseBase, ORMBaseSchema):
-    id: int
-    created_at: datetime
-    updated_at: datetime
+class CoursePublic(CourseBase, TimestampedPublicSchema):
+    pass

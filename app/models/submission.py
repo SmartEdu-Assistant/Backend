@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import BaseTableModel, ORMBaseSchema
+from app.models.base import BaseDeleteSchema, TimestampedModel, TimestampedPublicSchema
 
 if TYPE_CHECKING:
     from app.models.assignment import Assignment
@@ -22,12 +21,11 @@ class SubmissionBase(SQLModel):
     file_path: str = Field(max_length=500)
 
 
-class Submission(SubmissionBase, BaseTableModel, table=True):
+class Submission(SubmissionBase, TimestampedModel, table=True):
     __tablename__ = 'submissions'
 
     assignment_id: int = Field(foreign_key='assignments.id')
     student_id: int = Field(foreign_key='students.id')
-    submitted_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
     assignment: Optional['Assignment'] = Relationship(back_populates='submissions')
     student: Optional['Student'] = Relationship(back_populates='submissions')
@@ -54,10 +52,9 @@ class SubmissionUpdate(SQLModel):
     file_path: Optional[str] = Field(default=None, max_length=500)
 
 
-class SubmissionDelete(SQLModel):
-    id: int
+class SubmissionDelete(BaseDeleteSchema):
+    pass
 
 
-class SubmissionPublic(SubmissionBase, ORMBaseSchema):
-    id: int
-    submitted_at: datetime
+class SubmissionPublic(SubmissionBase, TimestampedPublicSchema):
+    pass

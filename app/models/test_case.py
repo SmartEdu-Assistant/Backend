@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import ORMBaseSchema, TimestampedModel
+from app.models.base import BaseDeleteSchema, TimestampedModel, TimestampedPublicSchema
 
 if TYPE_CHECKING:
     from app.models.assignment import Assignment
@@ -39,11 +38,9 @@ class TestCaseUpdate(SQLModel):
     weight: Optional[int] = None
 
 
-class TestCaseDelete(SQLModel):
-    id: int
+class TestCaseDelete(BaseDeleteSchema):
+    pass
 
 
-class TestCasePublic(TestCaseBase, ORMBaseSchema):
-    id: int
-    created_at: datetime
-    updated_at: datetime
+class TestCasePublic(TestCaseBase, TimestampedPublicSchema):
+    pass

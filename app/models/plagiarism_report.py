@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import ORMBaseSchema, TimestampedModel
+from app.models.base import BaseDeleteSchema, TimestampedModel, TimestampedPublicSchema
 
 if TYPE_CHECKING:
     from app.models.submission import Submission
@@ -24,14 +23,8 @@ class PlagiarismReport(PlagiarismReportBase, TimestampedModel, table=True):
     submission_id: int = Field(foreign_key='submissions.id')
     compared_with_id: int = Field(foreign_key='submissions.id')
 
-    submission: Optional['Submission'] = Relationship(
-        back_populates='plagiarism_reports',
-        sa_relationship_kwargs={'foreign_keys': '[PlagiarismReport.submission_id]'},
-    )
-    compared_submission: Optional['Submission'] = Relationship(
-        back_populates='compared_reports',
-        sa_relationship_kwargs={'foreign_keys': '[PlagiarismReport.compared_with_id]'},
-    )
+    submission: Optional['Submission'] = Relationship(back_populates='plagiarism_reports')
+    compared_submission: Optional['Submission'] = Relationship(back_populates='compared_reports')
 
 
 class PlagiarismReportCreate(PlagiarismReportBase):
@@ -45,11 +38,9 @@ class PlagiarismReportUpdate(SQLModel):
     detected_blocks: Optional[str] = None
 
 
-class PlagiarismReportDelete(SQLModel):
-    id: int
+class PlagiarismReportDelete(BaseDeleteSchema):
+    pass
 
 
-class PlagiarismReportPublic(PlagiarismReportBase, ORMBaseSchema):
-    id: int
-    created_at: datetime
-    updated_at: datetime
+class PlagiarismReportPublic(PlagiarismReportBase, TimestampedPublicSchema):
+    pass

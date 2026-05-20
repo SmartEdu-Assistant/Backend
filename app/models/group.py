@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import ORMBaseSchema, TimestampedModel
+from app.models.base import BaseDeleteSchema, TimestampedModel, TimestampedPublicSchema
 
 if TYPE_CHECKING:
     from app.models.course import Course
@@ -39,11 +38,9 @@ class GroupUpdate(SQLModel):
     course_id: Optional[int] = None
 
 
-class GroupDelete(SQLModel):
-    id: int
+class GroupDelete(BaseDeleteSchema):
+    pass
 
 
-class GroupPublic(GroupBase, ORMBaseSchema):
-    id: int
-    created_at: datetime
-    updated_at: datetime
+class GroupPublic(GroupBase, TimestampedPublicSchema):
+    pass

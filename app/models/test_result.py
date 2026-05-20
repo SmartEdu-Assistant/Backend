@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import BaseTableModel, ORMBaseSchema
+from app.models.base import BaseDeleteSchema, BasePublicSchema, BaseTableModel
 
 if TYPE_CHECKING:
     from app.models.submission import Submission
@@ -41,9 +41,9 @@ class TestResultUpdate(SQLModel):
     error_message: Optional[str] = None
 
 
-class TestResultDelete(SQLModel):
-    id: int
+class TestResultDelete(BaseDeleteSchema):
+    pass
 
 
-class TestResultPublic(TestResultBase, ORMBaseSchema):
-    id: int
+class TestResultPublic(TestResultBase, BasePublicSchema):
+    pass

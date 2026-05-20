@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import ORMBaseSchema, TimestampedModel
+from app.models.base import BaseDeleteSchema, TimestampedModel, TimestampedPublicSchema
 
 if TYPE_CHECKING:
     from app.models.submission import Submission
@@ -44,11 +43,9 @@ class CommentUpdate(SQLModel):
     is_system_generated: Optional[bool] = None
 
 
-class CommentDelete(SQLModel):
-    id: int
+class CommentDelete(BaseDeleteSchema):
+    pass
 
 
-class CommentPublic(CommentBase, ORMBaseSchema):
-    id: int
-    created_at: datetime
-    updated_at: datetime
+class CommentPublic(CommentBase, TimestampedPublicSchema):
+    pass

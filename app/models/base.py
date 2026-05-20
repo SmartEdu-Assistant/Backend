@@ -25,3 +25,15 @@ class TimestampedModel(BaseTableModel):
         nullable=False,
         sa_column_kwargs={'onupdate': datetime.utcnow},
     )
+
+
+class BaseDeleteSchema(BaseTableModel):
+    pass
+
+
+class BasePublicSchema(BaseTableModel, ORMBaseSchema):
+    pass
+
+
+class TimestampedPublicSchema(TimestampedModel, ORMBaseSchema):
+    pass

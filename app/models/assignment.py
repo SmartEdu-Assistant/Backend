@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import ORMBaseSchema, TimestampedModel
+from app.models.base import BaseDeleteSchema, TimestampedModel, TimestampedPublicSchema
 
 if TYPE_CHECKING:
     from app.models.course import Course
@@ -47,11 +47,9 @@ class AssignmentUpdate(SQLModel):
     course_id: Optional[int] = None
 
 
-class AssignmentDelete(SQLModel):
-    id: int
+class AssignmentDelete(BaseDeleteSchema):
+    pass
 
 
-class AssignmentPublic(AssignmentBase, ORMBaseSchema):
-    id: int
-    created_at: datetime
-    updated_at: datetime
+class AssignmentPublic(AssignmentBase, TimestampedPublicSchema):
+    pass

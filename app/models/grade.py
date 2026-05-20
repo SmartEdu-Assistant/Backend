@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.base import BaseTableModel, ORMBaseSchema
+from app.models.base import BaseDeleteSchema, TimestampedModel, TimestampedPublicSchema
 
 if TYPE_CHECKING:
     from app.models.submission import Submission
@@ -20,12 +19,11 @@ class GradeBase(SQLModel):
     is_published: bool = False
 
 
-class Grade(GradeBase, BaseTableModel, table=True):
+class Grade(GradeBase, TimestampedModel, table=True):
     __tablename__ = 'grades'
 
     submission_id: int = Field(foreign_key='submissions.id', unique=True)
     graded_by: int = Field(foreign_key='users.id')
-    graded_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
     submission: Optional['Submission'] = Relationship(back_populates='grades')
     grader: Optional['User'] = Relationship(back_populates='grades')
@@ -43,10 +41,9 @@ class GradeUpdate(SQLModel):
     is_published: Optional[bool] = None
 
 
-class GradeDelete(SQLModel):
-    id: int
+class GradeDelete(BaseDeleteSchema):
+    pass
 
 
-class GradePublic(GradeBase, ORMBaseSchema):
-    id: int
-    graded_at: datetime
+class GradePublic(GradeBase, TimestampedPublicSchema):
+    pass

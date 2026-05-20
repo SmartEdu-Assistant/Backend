@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 
@@ -35,8 +35,8 @@ class DatabaseSettings(BaseModel):
 
 
 class Settings(BaseSettings):
-    app: AppSettings = AppSettings()
-    db: DatabaseSettings = DatabaseSettings()
+    app: AppSettings = Field(default_factory=AppSettings)
+    db: DatabaseSettings = Field(default_factory=DatabaseSettings)
 
     model_config = SettingsConfigDict(
         env_file='.env',

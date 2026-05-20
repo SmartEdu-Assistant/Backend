@@ -26,9 +26,6 @@ class UserService(BaseService[User, UserCreate, UserUpdate]):
         update_data = payload.model_dump(
             exclude_unset=True,
             exclude_none=True,
-            exclude={'password'},
         )
-        if payload.password is not None:
-            update_data['password_hash'] = get_password_hash(payload.password)
         entity = await self.get(entity_id)
         return await self.repository.update(entity, update_data)
