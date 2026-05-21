@@ -35,8 +35,8 @@ class DatabaseSettings(BaseModel):
 
 
 class Settings(BaseSettings):
-    app: AppSettings = {}
-    db: DatabaseSettings = {}
+    app: AppSettings
+    db: DatabaseSettings
 
     model_config = SettingsConfigDict(
         env_file='.env',
@@ -48,7 +48,7 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    return Settings(app={}, db={})
 
 
 settings = get_settings()
