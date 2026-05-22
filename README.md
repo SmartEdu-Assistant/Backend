@@ -1,93 +1,41 @@
 # SmartEdu Assistant Backend
 
-## Описание проекта
-
-`SmartEdu Assistant Backend` - backend-часть сервиса для цифрового ассистента преподавателя.
-Проект реализован на `FastAPI` и построен по слоистой структуре:
-
-- `core` - конфигурация и общие исключения;
-- `db` - async engine, session и metadata;
-- `models` - модели БД;
-- `schemas` - `Base`, `Public`, `Create`, `Update` версии моделей;
-- `repositories` - работа с БД;
-- `services` - бизнес-логика;
-- `routers` - HTTP-эндпоинты;
-- `dependencies` - зависимости FastAPI.
-
-API подключает корневой `APIRouter` с префиксом `/api/v1`, а работа со структурой БД делегирована `Alembic`.
-
-## Состав команды
-
-- Константин Горшков
-- Виталина
+Backend-часть проекта SmartEdu Assistant на `FastAPI`. Проект организован по слоям: роутеры работают с сервисами, сервисы инкапсулируют бизнес-логику, а репозитории отвечают за доступ к базе данных.
 
 ## Стек
 
-- Python 3.10+
+- Python 3.13+
 - FastAPI
 - SQLModel
-- SQLAlchemy Async Engine / Async Session
+- SQLAlchemy Async
 - PostgreSQL
 - asyncpg
 - Alembic
+- pwdlib
 - Ruff
 - pre-commit
-
-## Структура проекта
-
-```text
-app/
-├── core/
-├── db/
-├── dependencies/
-├── models/
-├── repositories/
-├── routers/
-├── schemas/
-├── services/
-└── main.py
-migrations/
-.env.example
-alembic.ini
-pyproject.toml
-run.py
-```
 
 ## Переменные среды
 
 Скопируйте `.env.example` в `.env` и при необходимости измените значения.
 
-| Название переменной | Тип | Описание | Значение по умолчанию |
+| Переменная | Тип | Описание | Значение по умолчанию |
 |---|---|---|---|
-| `APP_NAME` | `str` | Название FastAPI-приложения | `SmartEdu Assistant API` |
-| `APP_VERSION` | `str` | Версия приложения | `0.1.0` |
-| `APP_DESCRIPTION` | `str` | Описание приложения для OpenAPI | `API for the SmartEdu Assistant project` |
-| `API_V1_PREFIX` | `str` | Корневой префикс для доменных роутеров | `/api/v1` |
-| `DEBUG` | `bool` | Режим отладки FastAPI | `false` |
-| `DB_ECHO` | `bool` | Логирование SQL-запросов SQLAlchemy | `false` |
-| `POSTGRES_HOST` | `str` | Хост локального PostgreSQL | `127.0.0.1` |
-| `POSTGRES_PORT` | `int` | Порт PostgreSQL | `5432` |
-| `POSTGRES_DB` | `str` | Имя базы данных | `smartedu` |
-| `POSTGRES_USER` | `str` | Пользователь PostgreSQL | `postgres` |
-| `POSTGRES_PASSWORD` | `str` | Пароль PostgreSQL | `postgres` |
+| `APP__NAME` | `str` | Название приложения | `SmartEdu Assistant API` |
+| `APP__VERSION` | `str` | Версия API | `0.1.0` |
+| `APP__DESCRIPTION` | `str` | Описание для OpenAPI | `API for the SmartEdu Assistant project` |
+| `APP__API_V1_PREFIX` | `str` | Префикс основной версии API | `/api/v1` |
+| `APP__DEBUG` | `bool` | Режим отладки FastAPI | `false` |
+| `DB__ECHO` | `bool` | Логирование SQL-запросов SQLAlchemy | `false` |
+| `DB__HOST` | `str` | Хост PostgreSQL | `127.0.0.1` |
+| `DB__PORT` | `int` | Порт PostgreSQL | `5432` |
+| `DB__NAME` | `str` | Имя базы данных | `smartedu` |
+| `DB__USER` | `str` | Пользователь PostgreSQL | `postgres` |
+| `DB__PASSWORD` | `str` | Пароль PostgreSQL | `postgres` |
 
-На основе этих значений приложение собирает строку подключения в формате:
+Приложение формирует строку подключения к БД автоматически на основе этих переменных.
 
-```text
-postgresql+asyncpg://POSTGRES_USER:POSTGRES_PASSWORD@POSTGRES_HOST:POSTGRES_PORT/POSTGRES_DB
-```
-
-## Подготовка локальной PostgreSQL
-
-Перед запуском приложения PostgreSQL должна быть запущена локально, а база данных уже создана.
-
-Пример SQL-команды:
-
-```sql
-CREATE DATABASE smartedu;
-```
-
-## Установка и запуск
+## Запуск проекта
 
 ### 1. Создать и активировать виртуальное окружение
 
@@ -108,57 +56,69 @@ pip install uv
 uv sync
 ```
 
-### 4. Создать `.env`
+### 4. Создать файл `.env`
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-### 5. Применить миграции
+### 5. Подготовить PostgreSQL
+
+Убедитесь, что PostgreSQL запущен и база данных создана.
+
+Пример:
+
+```sql
+CREATE DATABASE smartedu;
+```
+
+### 6. Применить миграции
 
 ```powershell
 uv run alembic upgrade head
 ```
 
-### 6. Запустить приложение
+### 7. Запустить приложение
 
 ```powershell
 uv run uvicorn app.main:app --reload
 ```
 
-## Миграции Alembic
+После запуска будут доступны:
 
-После настройки проекта структура БД не создаётся через `SQLModel.metadata.create_all()` на старте приложения.
-Все изменения схемы должны выполняться через `Alembic`.
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- ReDoc: `http://127.0.0.1:8000/redoc`
 
-### Создать новую миграцию
+## Работа с миграциями
+
+Создать новую миграцию:
 
 ```powershell
 uv run alembic revision --autogenerate -m "add new entity"
 ```
 
-### Применить миграции
+Применить миграции:
 
 ```powershell
 uv run alembic upgrade head
 ```
 
-### Откатить последнюю миграцию
+Откатить последнюю миграцию:
 
 ```powershell
 uv run alembic downgrade -1
 ```
 
-## Проверка проекта
+## Проверка качества
 
-### Запустить Ruff
+Проверка линтером и форматтером:
 
 ```powershell
 uv run ruff check .
 uv run ruff format .
 ```
 
-### Запустить pre-commit
+Запуск pre-commit:
 
 ```powershell
 uv run pre-commit run --all-files

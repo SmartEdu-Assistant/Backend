@@ -1,15 +1,8 @@
-target-version = "py313"
-line-length = 100
-
-[tool.mypy]
-plugins = ["pydantic.mypy"]
-
-[tool.ruff]
 line-length = 88
 indent-width = 4
 target-version = "py313"
 
-[tool.ruff.lint]
+[lint]
 fixable = ["ALL"]
 select = [
     "E",
@@ -27,10 +20,10 @@ select = [
     "SIM",
     "C90",
     "N",
-    "W"
+    "W",
 ]
 
-[tool.ruff.format]
+[format]
 quote-style = "single"
 indent-style = "space"
 docstring-code-format = false
