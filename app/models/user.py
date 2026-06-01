@@ -6,21 +6,12 @@ from typing import TYPE_CHECKING, Optional
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base import BaseDeleteSchema, TimestampedModel, TimestampedPublicSchema
+from app.models.rbac import Role, RolePublic, UserRoleLink
 
 if TYPE_CHECKING:
     from app.models.comment import Comment
     from app.models.course import Course
     from app.models.grade import Grade
-
-
-class UserRole(str, Enum):
-    ADMIN = 'ADMIN'
-    TEACHER = 'TEACHER'
-
-
-class UserStatus(str, Enum):
-    ACTIVE = 'ACTIVE'
-    BLOCKED = 'BLOCKED'
 
 
 class CourseTeacherLink(SQLModel, table=True):
@@ -37,12 +28,15 @@ class CourseTeacherLink(SQLModel, table=True):
         primary_key=True,
     )
 
+class UserStatus(str, Enum):
+    ACTIVE = 'ACTIVE'
+    BLOCKED = 'BLOCKED'
+
 
 class UserBase(SQLModel):
     email: str = Field(max_length=255)
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
-    role: UserRole = UserRole.TEACHER
     status: UserStatus = UserStatus.ACTIVE
 
 
@@ -52,12 +46,24 @@ class User(UserBase, TimestampedModel, table=True):
     email: str = Field(index=True, unique=True, max_length=255)
     password_hash: str
 
+    roles: list[Role] = Relationship(
+        back_populates='users',
+        link_model=UserRoleLink,
+    )
     courses: list['Course'] = Relationship(
         back_populates='teachers',
         link_model=CourseTeacherLink,
     )
     comments: list['Comment'] = Relationship(back_populates='author')
     grades: list['Grade'] = Relationship(back_populates='grader')
+
+    @property
+    def scopes(self) -> set[str]:
+        return {
+            permission.scope
+            for role in self.roles
+            for permission in role.permissions
+        }
 
 
 class UserCreate(UserBase):
@@ -76,4 +82,4 @@ class UserDelete(BaseDeleteSchema):
 
 
 class UserPublic(UserBase, TimestampedPublicSchema):
-    pass
+    roles: list[RolePublic] = []

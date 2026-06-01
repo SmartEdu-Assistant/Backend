@@ -1,5 +1,6 @@
 from app.dependencies.db import get_session
 from app.dependencies.services import (
+    AuthServiceDep,
     AssignmentServiceDep,
     CommentServiceDep,
     CourseServiceDep,
@@ -14,6 +15,7 @@ from app.dependencies.services import (
 )
 
 __all__ = [
+    'AuthServiceDep',
     'AssignmentServiceDep',
     'CommentServiceDep',
     'CourseServiceDep',

@@ -10,6 +10,15 @@ from app.models.comment import Comment, CommentCreate, CommentDelete, CommentPub
 from app.models.course import Course, CourseCreate, CourseDelete, CoursePublic, CourseUpdate
 from app.models.grade import Grade, GradeCreate, GradeDelete, GradePublic, GradeUpdate
 from app.models.group import Group, GroupCreate, GroupDelete, GroupPublic, GroupUpdate
+from app.models.rbac import (
+    Permission,
+    PermissionPublic,
+    Role,
+    RolePermissionLink,
+    RolePublic,
+    UserRoleLink,
+)
+from app.models.refresh_session import RefreshSession
 from app.models.plagiarism_report import (
     PlagiarismReport,
     PlagiarismReportCreate,
@@ -39,7 +48,6 @@ from app.models.user import (
     UserCreate,
     UserDelete,
     UserPublic,
-    UserRole,
     UserStatus,
     UserUpdate,
 )
@@ -73,11 +81,17 @@ __all__ = [
     'GroupDelete',
     'GroupPublic',
     'GroupUpdate',
+    'Permission',
+    'PermissionPublic',
     'PlagiarismReport',
     'PlagiarismReportCreate',
     'PlagiarismReportDelete',
     'PlagiarismReportPublic',
     'PlagiarismReportUpdate',
+    'RefreshSession',
+    'Role',
+    'RolePermissionLink',
+    'RolePublic',
     'Student',
     'StudentCreate',
     'StudentDelete',
@@ -103,7 +117,7 @@ __all__ = [
     'UserCreate',
     'UserDelete',
     'UserPublic',
-    'UserRole',
+    'UserRoleLink',
     'UserStatus',
     'UserUpdate',
 ]

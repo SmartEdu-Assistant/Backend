@@ -44,11 +44,15 @@ from app.models import (
     UserPublic,
     UserUpdate,
 )
+from app.schemas.auth import AuthSuccessResponse, LoginRequest, TokenPair
+from app.schemas.rbac import UpdateUserRolesRequest
+
 __all__ = [
     'AssignmentCreate',
     'AssignmentDelete',
     'AssignmentPublic',
     'AssignmentUpdate',
+    'AuthSuccessResponse',
     'CommentCreate',
     'CommentDelete',
     'CommentPublic',
@@ -65,6 +69,7 @@ __all__ = [
     'GroupDelete',
     'GroupPublic',
     'GroupUpdate',
+    'LoginRequest',
     'PlagiarismReportCreate',
     'PlagiarismReportDelete',
     'PlagiarismReportPublic',
@@ -85,6 +90,8 @@ __all__ = [
     'TestResultDelete',
     'TestResultPublic',
     'TestResultUpdate',
+    'TokenPair',
+    'UpdateUserRolesRequest',
     'UserCreate',
     'UserDelete',
     'UserPublic',

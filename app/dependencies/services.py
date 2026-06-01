@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 
 from app.services import (
+    AuthService,
     AssignmentService,
     CommentService,
     CourseService,
@@ -16,6 +17,7 @@ from app.services import (
     UserService,
 )
 
+AuthServiceDep = Annotated[AuthService, Depends(AuthService)]
 AssignmentServiceDep = Annotated[AssignmentService, Depends(AssignmentService)]
 CommentServiceDep = Annotated[CommentService, Depends(CommentService)]
 CourseServiceDep = Annotated[CourseService, Depends(CourseService)]
@@ -32,6 +34,7 @@ TestResultServiceDep = Annotated[TestResultService, Depends(TestResultService)]
 UserServiceDep = Annotated[UserService, Depends(UserService)]
 
 __all__ = [
+    'AuthServiceDep',
     'AssignmentServiceDep',
     'CommentServiceDep',
     'CourseServiceDep',
