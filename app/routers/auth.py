@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Response, Security, status
@@ -27,7 +28,9 @@ def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
         samesite=settings.auth.refresh_cookie_samesite,
         domain=settings.auth.refresh_cookie_domain,
         path=settings.auth.refresh_cookie_path,
-        max_age=settings.auth.refresh_token_ttl_days * 24 * 60 * 60,
+        max_age=int(
+            timedelta(days=settings.auth.refresh_token_ttl_days).total_seconds(),
+        ),
     )
 
 

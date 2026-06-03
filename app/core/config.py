@@ -59,10 +59,10 @@ class RbacSettings(BaseModel):
 
 
 class Settings(BaseSettings):
-    app: AppSettings = Field(default_factory=AppSettings)
-    db: DatabaseSettings = Field(default_factory=DatabaseSettings)
-    auth: AuthSettings = Field(default_factory=AuthSettings.model_construct)
-    rbac: RbacSettings = Field(default_factory=RbacSettings.model_construct)
+    app: AppSettings
+    db: DatabaseSettings
+    auth: AuthSettings
+    rbac: RbacSettings
 
     model_config = SettingsConfigDict(
         env_file='.env',
