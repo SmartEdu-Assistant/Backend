@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
@@ -45,6 +44,14 @@ class User(UserBase, TimestampedModel, table=True):
 
     email: str = Field(index=True, unique=True, max_length=255)
     password_hash: str
+    is_verified: bool = False
+    verification_token: str | None = Field(
+        default=None,
+        index=True,
+        unique=True,
+        max_length=255,
+    )
+    verification_token_expires_at: datetime | None = None
 
     roles: list[Role] = Relationship(
         back_populates='users',
@@ -75,6 +82,7 @@ class UserUpdate(SQLModel):
     first_name: Optional[str] = Field(default=None, max_length=100)
     last_name: Optional[str] = Field(default=None, max_length=100)
     status: Optional[UserStatus] = None
+    is_verified: Optional[bool] = None
 
 
 class UserDelete(BaseDeleteSchema):
@@ -82,4 +90,5 @@ class UserDelete(BaseDeleteSchema):
 
 
 class UserPublic(UserBase, TimestampedPublicSchema):
+    is_verified: bool = False
     roles: list[RolePublic] = []

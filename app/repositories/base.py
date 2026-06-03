@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Annotated, Generic, TypeVar
 
 from fastapi import Depends
+from sqlalchemy import func
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -20,8 +21,17 @@ class BaseRepository(Generic[ModelT]):
         self.session = session
 
     async def list(self) -> list[ModelT]:
-        result = await self.session.exec(select(self.model))
+        result = await self.session.exec(self._list_statement())
         return list(result.all())
+
+    async def list_paginated(self, *, offset: int, limit: int) -> tuple[list[ModelT], int]:
+        total_result = await self.session.exec(
+            select(func.count()).select_from(self.model),
+        )
+        items_result = await self.session.exec(
+            self._list_statement().offset(offset).limit(limit),
+        )
+        return list(items_result.all()), total_result.one()
 
     async def get(self, entity_id: int) -> ModelT | None:
         return await self.session.get(self.model, entity_id)
@@ -55,3 +65,6 @@ class BaseRepository(Generic[ModelT]):
     async def delete(self, entity: ModelT) -> None:
         await self.session.delete(entity)
         await self.session.commit()
+
+    def _list_statement(self):
+        return select(self.model)

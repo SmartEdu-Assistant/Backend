@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -23,8 +21,14 @@ class PlagiarismReport(PlagiarismReportBase, TimestampedModel, table=True):
     submission_id: int = Field(foreign_key='submissions.id')
     compared_with_id: int = Field(foreign_key='submissions.id')
 
-    submission: Optional['Submission'] = Relationship(back_populates='plagiarism_reports')
-    compared_submission: Optional['Submission'] = Relationship(back_populates='compared_reports')
+    submission: 'Submission' = Relationship(
+        back_populates='plagiarism_reports',
+        sa_relationship_kwargs={'foreign_keys': '[PlagiarismReport.submission_id]'},
+    )
+    compared_submission: 'Submission' = Relationship(
+        back_populates='compared_reports',
+        sa_relationship_kwargs={'foreign_keys': '[PlagiarismReport.compared_with_id]'},
+    )
 
 
 class PlagiarismReportCreate(PlagiarismReportBase):

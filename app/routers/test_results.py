@@ -1,26 +1,43 @@
 from fastapi import APIRouter, Security, status
 
+from app.core.api_docs import (
+    AUTH_ERROR_RESPONSES,
+    NOT_FOUND_ERROR_RESPONSES,
+    SERVER_ERROR_RESPONSES,
+    VALIDATION_ERROR_RESPONSES,
+    combine_responses,
+)
 from app.dependencies.auth import get_current_user
+from app.dependencies.pagination import PaginationDep
 from app.dependencies.services import TestResultServiceDep
-from app.schemas import TestResultCreate, TestResultPublic, TestResultUpdate
+from app.schemas import Page, TestResultCreate, TestResultPublic, TestResultUpdate
 
 
-router = APIRouter(prefix='/test-results', tags=['test-results'])
+router = APIRouter(
+    prefix='/test-results',
+    tags=['test-results'],
+    responses=combine_responses(
+        SERVER_ERROR_RESPONSES,
+        VALIDATION_ERROR_RESPONSES,
+        AUTH_ERROR_RESPONSES,
+    ),
+)
 
 
 @router.get(
     '/',
-    response_model=list[TestResultPublic],
+    response_model=Page[TestResultPublic],
     dependencies=[Security(get_current_user, scopes=['test-results:read'])],
 )
-async def list_test_results(service: TestResultServiceDep):
-    return await service.list()
+async def list_test_results(service: TestResultServiceDep, pagination: PaginationDep):
+    return await service.list(pagination)
 
 
 @router.get(
     '/{test_result_id}',
     response_model=TestResultPublic,
     dependencies=[Security(get_current_user, scopes=['test-results:read'])],
+    responses=NOT_FOUND_ERROR_RESPONSES,
 )
 async def get_test_result(test_result_id: int, service: TestResultServiceDep):
     return await service.get(test_result_id)
@@ -43,6 +60,7 @@ async def create_test_result(
     '/{test_result_id}',
     response_model=TestResultPublic,
     dependencies=[Security(get_current_user, scopes=['test-results:write'])],
+    responses=NOT_FOUND_ERROR_RESPONSES,
 )
 async def update_test_result(
     test_result_id: int,
@@ -56,6 +74,7 @@ async def update_test_result(
     '/{test_result_id}',
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Security(get_current_user, scopes=['test-results:write'])],
+    responses=NOT_FOUND_ERROR_RESPONSES,
 )
 async def delete_test_result(test_result_id: int, service: TestResultServiceDep):
     await service.delete(test_result_id)

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
@@ -28,7 +26,7 @@ class Assignment(AssignmentBase, TimestampedModel, table=True):
 
     course_id: int = Field(foreign_key='courses.id')
 
-    course: Optional['Course'] = Relationship(back_populates='assignments')
+    course: 'Course' = Relationship(back_populates='assignments')
     test_cases: list['TestCase'] = Relationship(back_populates='assignment')
     submissions: list['Submission'] = Relationship(back_populates='assignment')
 

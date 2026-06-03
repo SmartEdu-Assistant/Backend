@@ -14,4 +14,14 @@ class TokenPair(SQLModel):
 
 class AuthSuccessResponse(SQLModel):
     success: bool = True
+    message: str = 'Operation completed successfully'
+
+
+class ConfirmAccountRequest(SQLModel):
+    token: str
+
+
+class ChangePasswordRequest(SQLModel):
+    current_password: str
+    new_password: str
 

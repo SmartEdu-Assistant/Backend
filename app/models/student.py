@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -22,7 +20,7 @@ class Student(StudentBase, TimestampedModel, table=True):
 
     group_id: int = Field(foreign_key='groups.id')
 
-    group: Optional['Group'] = Relationship(back_populates='students')
+    group: 'Group' = Relationship(back_populates='students')
     submissions: list['Submission'] = Relationship(back_populates='student')
 
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -27,8 +25,8 @@ class Submission(SubmissionBase, TimestampedModel, table=True):
     assignment_id: int = Field(foreign_key='assignments.id')
     student_id: int = Field(foreign_key='students.id')
 
-    assignment: Optional['Assignment'] = Relationship(back_populates='submissions')
-    student: Optional['Student'] = Relationship(back_populates='submissions')
+    assignment: 'Assignment' = Relationship(back_populates='submissions')
+    student: 'Student' = Relationship(back_populates='submissions')
     test_results: list['TestResult'] = Relationship(back_populates='submission')
     comments: list['Comment'] = Relationship(back_populates='submission')
     grades: list['Grade'] = Relationship(back_populates='submission')

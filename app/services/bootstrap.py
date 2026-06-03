@@ -84,6 +84,9 @@ class RBACBootstrapper:
                 first_name=settings.rbac.admin_first_name,
                 last_name=settings.rbac.admin_last_name,
                 status=UserStatus.ACTIVE,
+                is_verified=True,
+                verification_token=None,
+                verification_token_expires_at=None,
                 password_hash=get_password_hash(settings.rbac.admin_password),
             )
             admin_user.roles = desired_roles
@@ -94,6 +97,9 @@ class RBACBootstrapper:
         for role in desired_roles:
             if role.name not in existing_role_names:
                 admin_user.roles.append(role)
+        admin_user.is_verified = True
+        admin_user.verification_token = None
+        admin_user.verification_token_expires_at = None
         await self.user_repository.save(admin_user)
 
     async def _upsert_role(

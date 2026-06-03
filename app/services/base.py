@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from app.core.exceptions import EntityNotFoundError
 from app.models.base import BaseTableModel
 from app.repositories.base import BaseRepository
+from app.schemas.pagination import Page, PaginationParams
 
 
 ModelT = TypeVar('ModelT', bound=BaseTableModel)
@@ -20,8 +21,12 @@ class BaseService(Generic[ModelT, CreateSchemaT, UpdateSchemaT]):
     def __init__(self, repository: BaseRepository[ModelT]) -> None:
         self.repository = repository
 
-    async def list(self) -> list[ModelT]:
-        return await self.repository.list()
+    async def list(self, pagination: PaginationParams) -> Page[ModelT]:
+        items, total = await self.repository.list_paginated(
+            offset=pagination.offset,
+            limit=pagination.size,
+        )
+        return Page[ModelT].create(items=items, total=total, params=pagination)
 
     async def get(self, entity_id: int) -> ModelT:
         entity = await self.repository.get(entity_id)

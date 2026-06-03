@@ -2,6 +2,7 @@ from app.services.auth import AuthService
 from app.services.assignment import AssignmentService
 from app.services.comment import CommentService
 from app.services.course import CourseService
+from app.services.email_notification import EmailNotificationService
 from app.services.grade import GradeService
 from app.services.group import GroupService
 from app.services.plagiarism_report import PlagiarismReportService
@@ -16,6 +17,7 @@ __all__ = [
     'AssignmentService',
     'CommentService',
     'CourseService',
+    'EmailNotificationService',
     'GradeService',
     'GroupService',
     'PlagiarismReportService',

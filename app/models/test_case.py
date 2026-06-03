@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -23,7 +21,7 @@ class TestCase(TestCaseBase, TimestampedModel, table=True):
 
     assignment_id: int = Field(foreign_key='assignments.id')
 
-    assignment: Optional['Assignment'] = Relationship(back_populates='test_cases')
+    assignment: 'Assignment' = Relationship(back_populates='test_cases')
     test_results: list['TestResult'] = Relationship(back_populates='test_case')
 
 

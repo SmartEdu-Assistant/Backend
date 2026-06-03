@@ -1,19 +1,28 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import BackgroundTasks, Depends
 
 from app.core.config import settings
+from app.core.exceptions import AuthenticationError, AuthorizationError
 from app.core.security import (
     create_jwt_token,
     decode_jwt_token,
+    get_password_hash,
     verify_password,
 )
 from app.models import RefreshSession, User
 from app.repositories import RefreshSessionRepository, UserRepository
-from app.schemas import LoginRequest, TokenPair, UserCreate
+from app.schemas import (
+    ChangePasswordRequest,
+    ConfirmAccountRequest,
+    LoginRequest,
+    TokenPair,
+    UserCreate,
+)
+from app.services.email_notification import EmailNotificationService
 from app.services.user import UserService
 
 
@@ -25,28 +34,40 @@ class AuthService:
             RefreshSessionRepository,
             Depends(RefreshSessionRepository),
         ],
+        email_notification_service: Annotated[
+            EmailNotificationService,
+            Depends(EmailNotificationService),
+        ],
         user_service: Annotated[UserService, Depends(UserService)],
     ) -> None:
         self.user_repository = user_repository
         self.refresh_session_repository = refresh_session_repository
+        self.email_notification_service = email_notification_service
         self.user_service = user_service
 
-    async def register(self, payload: UserCreate) -> User:
-        return await self.user_service.create(payload)
+    async def register(
+        self,
+        payload: UserCreate,
+        background_tasks: BackgroundTasks,
+    ) -> User:
+        user = await self.user_service.create(payload)
+        notification = await self.email_notification_service.queue_account_confirmation(user)
+        background_tasks.add_task(
+            self.email_notification_service.send_notification,
+            notification.id,
+        )
+        return user
 
     async def login(self, payload: LoginRequest) -> tuple[User, TokenPair]:
         user = await self.user_repository.get_by_email(payload.email)
         if user is None or not verify_password(payload.password, user.password_hash):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid email or password',
-            )
+            raise AuthenticationError('Invalid email or password')
 
         if user.status != 'ACTIVE':
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail='User is blocked',
-            )
+            raise AuthorizationError('User is blocked')
+
+        if settings.auth.require_verified_account and not user.is_verified:
+            raise AuthorizationError('Account is not confirmed yet')
 
         token_pair = await self._issue_token_pair(user)
         return user, token_pair
@@ -59,10 +80,7 @@ class AuthService:
             payload['jti'],
         )
         if refresh_session is None or refresh_session.user_id != user.id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Refresh session is invalid',
-            )
+            raise AuthenticationError('Refresh session is invalid')
 
         await self.refresh_session_repository.revoke(refresh_session)
         token_pair = await self._issue_token_pair(user)
@@ -78,6 +96,45 @@ class AuthService:
         payload = self._decode_token_or_401(access_token)
         self.ensure_token_type(payload, 'access')
         return await self._get_user_from_payload(payload)
+
+    async def confirm_account(self, payload: ConfirmAccountRequest) -> User:
+        user = await self.user_repository.get_by_verification_token(payload.token)
+        if user is None or user.verification_token_expires_at is None:
+            raise AuthenticationError('Verification token is invalid')
+        if user.verification_token_expires_at < datetime.utcnow():
+            raise AuthenticationError('Verification token has expired')
+
+        return await self.user_repository.update(
+            user,
+            {
+                'is_verified': True,
+                'verification_token': None,
+                'verification_token_expires_at': None,
+            },
+        )
+
+    async def change_password(
+        self,
+        current_user: User,
+        payload: ChangePasswordRequest,
+        background_tasks: BackgroundTasks,
+    ) -> None:
+        if not verify_password(payload.current_password, current_user.password_hash):
+            raise AuthenticationError('Current password is invalid')
+
+        await self.user_repository.update(
+            current_user,
+            {'password_hash': get_password_hash(payload.new_password)},
+        )
+        await self.refresh_session_repository.revoke_for_user(current_user.id)
+
+        notification = await self.email_notification_service.queue_password_changed(
+            current_user,
+        )
+        background_tasks.add_task(
+            self.email_notification_service.send_notification,
+            notification.id,
+        )
 
     async def _issue_token_pair(self, user: User) -> TokenPair:
         subject = str(user.id)
@@ -108,36 +165,23 @@ class AuthService:
         try:
             user_id = int(payload['sub'])
         except (TypeError, ValueError) as exc:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid token subject',
-            ) from exc
+            raise AuthenticationError('Invalid token subject') from exc
 
         user = await self.user_repository.get(user_id)
         if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='User not found for token',
-            )
+            raise AuthenticationError('User not found for token')
         if user.status != 'ACTIVE':
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail='User is blocked',
-            )
+            raise AuthorizationError('User is blocked')
         return user
 
     def ensure_token_type(self, payload: dict, expected_type: str) -> None:
         if payload.get('token_type') != expected_type:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f'Invalid token type, expected {expected_type}',
+            raise AuthenticationError(
+                f'Invalid token type, expected {expected_type}',
             )
 
     def _decode_token_or_401(self, token: str) -> dict:
         try:
             return decode_jwt_token(token)
         except ValueError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=str(exc),
-            ) from exc
+            raise AuthenticationError(str(exc)) from exc
