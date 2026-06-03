@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.core.config import settings
 from app.routers.assignments import router as assignments_router
+from app.routers.auth import router as auth_router
 from app.routers.comments import router as comments_router
 from app.routers.courses import router as courses_router
 from app.routers.grades import router as grades_router
@@ -14,6 +15,7 @@ from app.routers.test_results import router as test_results_router
 from app.routers.users import router as users_router
 
 api_router = APIRouter(prefix=settings.app.api_v1_prefix)
+api_router.include_router(auth_router)
 api_router.include_router(users_router)
 api_router.include_router(courses_router)
 api_router.include_router(groups_router)

@@ -1,8 +1,6 @@
-from app import models
+import app.models  # noqa: F401
 from sqlmodel import SQLModel
 
-
-registered_models = models
 metadata = SQLModel.metadata
 
 __all__ = ['metadata']

@@ -1,3 +1,4 @@
+from app.services.auth import AuthService
 from app.services.assignment import AssignmentService
 from app.services.comment import CommentService
 from app.services.course import CourseService
@@ -11,6 +12,7 @@ from app.services.test_result import TestResultService
 from app.services.user import UserService
 
 __all__ = [
+    'AuthService',
     'AssignmentService',
     'CommentService',
     'CourseService',
