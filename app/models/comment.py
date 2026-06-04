@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -26,8 +24,8 @@ class Comment(CommentBase, TimestampedModel, table=True):
     submission_id: int = Field(foreign_key='submissions.id')
     author_id: int = Field(foreign_key='users.id')
 
-    submission: Optional['Submission'] = Relationship(back_populates='comments')
-    author: Optional['User'] = Relationship(back_populates='comments')
+    submission: 'Submission' = Relationship(back_populates='comments')
+    author: 'User' = Relationship(back_populates='comments')
 
 
 class CommentCreate(CommentBase):

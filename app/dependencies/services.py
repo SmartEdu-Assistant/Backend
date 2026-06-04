@@ -7,6 +7,7 @@ from app.services import (
     AssignmentService,
     CommentService,
     CourseService,
+    EmailNotificationService,
     GradeService,
     GroupService,
     PlagiarismReportService,
@@ -21,6 +22,10 @@ AuthServiceDep = Annotated[AuthService, Depends(AuthService)]
 AssignmentServiceDep = Annotated[AssignmentService, Depends(AssignmentService)]
 CommentServiceDep = Annotated[CommentService, Depends(CommentService)]
 CourseServiceDep = Annotated[CourseService, Depends(CourseService)]
+EmailNotificationServiceDep = Annotated[
+    EmailNotificationService,
+    Depends(EmailNotificationService),
+]
 GradeServiceDep = Annotated[GradeService, Depends(GradeService)]
 GroupServiceDep = Annotated[GroupService, Depends(GroupService)]
 PlagiarismReportServiceDep = Annotated[
@@ -38,6 +43,7 @@ __all__ = [
     'AssignmentServiceDep',
     'CommentServiceDep',
     'CourseServiceDep',
+    'EmailNotificationServiceDep',
     'GradeServiceDep',
     'GroupServiceDep',
     'PlagiarismReportServiceDep',

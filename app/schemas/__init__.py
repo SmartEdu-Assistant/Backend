@@ -44,7 +44,15 @@ from app.models import (
     UserPublic,
     UserUpdate,
 )
-from app.schemas.auth import AuthSuccessResponse, LoginRequest, TokenPair
+from app.schemas.auth import (
+    AuthSuccessResponse,
+    ChangePasswordRequest,
+    ConfirmAccountRequest,
+    LoginRequest,
+    TokenPair,
+)
+from app.schemas.errors import ErrorResponse, ValidationErrorResponse
+from app.schemas.pagination import Page, PaginationParams
 from app.schemas.rbac import UpdateUserRolesRequest
 
 __all__ = [
@@ -53,6 +61,7 @@ __all__ = [
     'AssignmentPublic',
     'AssignmentUpdate',
     'AuthSuccessResponse',
+    'ChangePasswordRequest',
     'CommentCreate',
     'CommentDelete',
     'CommentPublic',
@@ -61,6 +70,7 @@ __all__ = [
     'CourseDelete',
     'CoursePublic',
     'CourseUpdate',
+    'ErrorResponse',
     'GradeCreate',
     'GradeDelete',
     'GradePublic',
@@ -70,6 +80,8 @@ __all__ = [
     'GroupPublic',
     'GroupUpdate',
     'LoginRequest',
+    'Page',
+    'PaginationParams',
     'PlagiarismReportCreate',
     'PlagiarismReportDelete',
     'PlagiarismReportPublic',
@@ -91,9 +103,11 @@ __all__ = [
     'TestResultPublic',
     'TestResultUpdate',
     'TokenPair',
+    'ConfirmAccountRequest',
     'UpdateUserRolesRequest',
     'UserCreate',
     'UserDelete',
     'UserPublic',
     'UserUpdate',
+    'ValidationErrorResponse',
 ]

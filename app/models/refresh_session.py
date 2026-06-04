@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -19,4 +17,4 @@ class RefreshSession(TimestampedModel, table=True):
     expires_at: datetime
     revoked_at: datetime | None = None
 
-    user: 'User' | None = Relationship()
+    user: 'User' = Relationship()

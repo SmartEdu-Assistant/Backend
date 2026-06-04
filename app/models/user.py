@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
@@ -28,6 +26,7 @@ class CourseTeacherLink(SQLModel, table=True):
         primary_key=True,
     )
 
+
 class UserStatus(str, Enum):
     ACTIVE = 'ACTIVE'
     BLOCKED = 'BLOCKED'
@@ -45,6 +44,7 @@ class User(UserBase, TimestampedModel, table=True):
 
     email: str = Field(index=True, unique=True, max_length=255)
     password_hash: str
+    is_verified: bool = False
 
     roles: list[Role] = Relationship(
         back_populates='users',
@@ -75,6 +75,7 @@ class UserUpdate(SQLModel):
     first_name: Optional[str] = Field(default=None, max_length=100)
     last_name: Optional[str] = Field(default=None, max_length=100)
     status: Optional[UserStatus] = None
+    is_verified: Optional[bool] = None
 
 
 class UserDelete(BaseDeleteSchema):
@@ -82,4 +83,5 @@ class UserDelete(BaseDeleteSchema):
 
 
 class UserPublic(UserBase, TimestampedPublicSchema):
+    is_verified: bool = False
     roles: list[RolePublic] = []

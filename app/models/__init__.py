@@ -6,6 +6,13 @@ from app.models.assignment import (
     AssignmentUpdate,
 )
 from app.models.base import BaseTableModel, ORMBaseSchema, TimestampedModel
+from app.models.email_notification import (
+    EmailNotification,
+    EmailNotificationCreate,
+    EmailNotificationPublic,
+    EmailNotificationStatus,
+    EmailNotificationUpdate,
+)
 from app.models.comment import Comment, CommentCreate, CommentDelete, CommentPublic, CommentUpdate
 from app.models.course import Course, CourseCreate, CourseDelete, CoursePublic, CourseUpdate
 from app.models.grade import Grade, GradeCreate, GradeDelete, GradePublic, GradeUpdate
@@ -71,6 +78,11 @@ __all__ = [
     'CoursePublic',
     'CourseTeacherLink',
     'CourseUpdate',
+    'EmailNotification',
+    'EmailNotificationCreate',
+    'EmailNotificationPublic',
+    'EmailNotificationStatus',
+    'EmailNotificationUpdate',
     'Grade',
     'GradeCreate',
     'GradeDelete',

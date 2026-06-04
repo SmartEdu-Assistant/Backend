@@ -14,6 +14,11 @@ class AppSettings(BaseModel):
     debug: bool = False
 
 
+class LoggingSettings(BaseModel):
+    level: str = 'INFO'
+    format: str = '%(asctime)s %(levelname)s [%(name)s] %(message)s'
+
+
 class DatabaseSettings(BaseModel):
     driver: str = 'postgresql+asyncpg'
     echo: bool = False
@@ -46,6 +51,38 @@ class AuthSettings(BaseModel):
     refresh_cookie_samesite: Literal['lax', 'strict', 'none'] = 'lax'
     refresh_cookie_domain: str | None = None
     refresh_cookie_path: str = '/'
+    verification_token_ttl_hours: int = 24
+    require_verified_account: bool = True
+
+
+class CorsSettings(BaseModel):
+    allow_origins: list[str] = ['http://localhost:3000', 'http://127.0.0.1:3000']
+    allow_credentials: bool = True
+    allow_methods: list[str] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+    allow_headers: list[str] = ['*']
+
+
+class RateLimitSettings(BaseModel):
+    enabled: bool = True
+    default_limit: str = '100/minute'
+
+
+class SmtpSettings(BaseModel):
+    enabled: bool = False
+    host: str = 'smtp.example.com'
+    port: int = 587
+    username: str = 'user@example.com'
+    password: str = 'change_me'
+    from_email: str = 'noreply@example.com'
+    from_name: str = 'SmartEdu Assistant'
+    starttls: bool = True
+    ssl_tls: bool = False
+    validate_certs: bool = True
+
+
+class EmailSettings(BaseModel):
+    templates_dir: str = 'app/templates/emails'
+    frontend_base_url: str = 'http://localhost:3000'
 
 
 class RbacSettings(BaseModel):
@@ -60,8 +97,13 @@ class RbacSettings(BaseModel):
 
 class Settings(BaseSettings):
     app: AppSettings
+    logging: LoggingSettings = LoggingSettings()
     db: DatabaseSettings
     auth: AuthSettings
+    cors: CorsSettings = CorsSettings()
+    rate_limit: RateLimitSettings = RateLimitSettings()
+    smtp: SmtpSettings = SmtpSettings()
+    email: EmailSettings = EmailSettings()
     rbac: RbacSettings
 
     model_config = SettingsConfigDict(

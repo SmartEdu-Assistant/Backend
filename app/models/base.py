@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field as PydanticField
 from sqlmodel import Field, SQLModel
 
 
@@ -37,3 +37,10 @@ class BasePublicSchema(BaseTableModel, ORMBaseSchema):
 
 class TimestampedPublicSchema(TimestampedModel, ORMBaseSchema):
     pass
+
+
+class PaginatedResponseBase(ORMBaseSchema):
+    total: int = PydanticField(ge=0)
+    page: int = PydanticField(ge=1)
+    size: int = PydanticField(ge=1)
+    pages: int = PydanticField(ge=0)

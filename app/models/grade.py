@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -25,8 +23,8 @@ class Grade(GradeBase, TimestampedModel, table=True):
     submission_id: int = Field(foreign_key='submissions.id', unique=True)
     graded_by: int = Field(foreign_key='users.id')
 
-    submission: Optional['Submission'] = Relationship(back_populates='grades')
-    grader: Optional['User'] = Relationship(back_populates='grades')
+    submission: 'Submission' = Relationship(back_populates='grades')
+    grader: 'User' = Relationship(back_populates='grades')
 
 
 class GradeCreate(GradeBase):

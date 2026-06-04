@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
@@ -7,6 +7,7 @@ from app.models import (
     Assignment,
     Comment,
     Course,
+    EmailNotification,
     Grade,
     Group,
     Permission,
@@ -26,10 +27,13 @@ class UserRepository(BaseRepository[User]):
     model = User
 
     async def list(self) -> list[User]:
-        result = await self.session.exec(
-            select(User).options(selectinload(User.roles)),
-        )
+        result = await self.session.exec(self._list_statement())
         return list(result.all())
+
+    def _list_statement(self):
+        return select(User).options(
+            selectinload(User.roles).selectinload(Role.permissions),
+        )
 
     async def get(self, entity_id: int) -> User | None:
         result = await self.session.exec(
@@ -46,7 +50,6 @@ class UserRepository(BaseRepository[User]):
             .options(selectinload(User.roles).selectinload(Role.permissions)),
         )
         return result.first()
-
 
 class RoleRepository(BaseRepository[Role]):
     model = Role
@@ -94,7 +97,7 @@ class RefreshSessionRepository(BaseRepository[RefreshSession]):
     model = RefreshSession
 
     async def get_active_by_jti(self, jti: str) -> RefreshSession | None:
-        now = datetime.now(timezone.utc)
+        now = datetime.utcnow()
         result = await self.session.exec(
             select(RefreshSession)
             .where(RefreshSession.jti == jti)
@@ -104,11 +107,11 @@ class RefreshSessionRepository(BaseRepository[RefreshSession]):
         return result.first()
 
     async def revoke(self, refresh_session: RefreshSession) -> RefreshSession:
-        refresh_session.revoked_at = datetime.now(timezone.utc)
+        refresh_session.revoked_at = datetime.utcnow()
         return await self.save(refresh_session)
 
     async def revoke_for_user(self, user_id: int) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.utcnow()
         result = await self.session.exec(
             select(RefreshSession)
             .where(RefreshSession.user_id == user_id)
@@ -158,3 +161,13 @@ class GradeRepository(BaseRepository[Grade]):
 
 class PlagiarismReportRepository(BaseRepository[PlagiarismReport]):
     model = PlagiarismReport
+
+
+class EmailNotificationRepository(BaseRepository[EmailNotification]):
+    model = EmailNotification
+
+    async def get_by_confirmation_token(self, token: str) -> EmailNotification | None:
+        result = await self.session.exec(
+            select(EmailNotification).where(EmailNotification.confirmation_token == token),
+        )
+        return result.first()

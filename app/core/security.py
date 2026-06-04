@@ -39,7 +39,7 @@ def create_jwt_token(
         key=settings.auth.secret_key,
         algorithm=settings.auth.algorithm,
     )
-    return token, token_id, expires_at
+    return token, token_id, expires_at.replace(tzinfo=None)
 
 
 def decode_jwt_token(token: str) -> dict:

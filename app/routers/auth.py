@@ -1,14 +1,24 @@
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Response, Security, status
+from fastapi import APIRouter, BackgroundTasks, Cookie, Response, Security, status
 
+from app.core.api_docs import (
+    AUTH_ERROR_RESPONSES,
+    BAD_REQUEST_ERROR_RESPONSES,
+    CONFLICT_ERROR_RESPONSES,
+    SERVER_ERROR_RESPONSES,
+    VALIDATION_ERROR_RESPONSES,
+    combine_responses,
+)
 from app.core.config import settings
 from app.dependencies.auth import get_current_user
 from app.dependencies.services import AuthServiceDep
 from app.models import User
 from app.schemas import (
     AuthSuccessResponse,
+    ChangePasswordRequest,
+    ConfirmAccountRequest,
     LoginRequest,
     TokenPair,
     UserCreate,
@@ -16,7 +26,11 @@ from app.schemas import (
 )
 
 
-router = APIRouter(prefix='/auth', tags=['auth'])
+router = APIRouter(
+    prefix='/auth',
+    tags=['auth'],
+    responses=combine_responses(SERVER_ERROR_RESPONSES, VALIDATION_ERROR_RESPONSES),
+)
 
 
 def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
@@ -46,16 +60,27 @@ def _delete_refresh_cookie(response: Response) -> None:
     '/register',
     response_model=AuthSuccessResponse,
     status_code=status.HTTP_201_CREATED,
+    responses=combine_responses(
+        BAD_REQUEST_ERROR_RESPONSES,
+        CONFLICT_ERROR_RESPONSES,
+    ),
 )
 async def register(
     payload: UserCreate,
+    background_tasks: BackgroundTasks,
     service: AuthServiceDep,
 ):
-    await service.register(payload)
-    return AuthSuccessResponse()
+    await service.register(payload, background_tasks)
+    return AuthSuccessResponse(
+        message='Registration completed. Please confirm your account by email.',
+    )
 
 
-@router.post('/login', response_model=TokenPair)
+@router.post(
+    '/login',
+    response_model=TokenPair,
+    responses=AUTH_ERROR_RESPONSES,
+)
 async def login(
     payload: LoginRequest,
     response: Response,
@@ -66,14 +91,14 @@ async def login(
     return token_pair
 
 
-@router.get('/me', response_model=UserPublic)
+@router.get('/me', response_model=UserPublic, responses=AUTH_ERROR_RESPONSES)
 async def me(
     current_user: Annotated[User, Security(get_current_user, scopes=['profile:read'])],
 ):
     return current_user
 
 
-@router.post('/logout', response_model=AuthSuccessResponse)
+@router.post('/logout', response_model=AuthSuccessResponse, responses=AUTH_ERROR_RESPONSES)
 async def logout(
     response: Response,
     service: AuthServiceDep,
@@ -82,10 +107,10 @@ async def logout(
     if refresh_token:
         await service.logout(refresh_token)
     _delete_refresh_cookie(response)
-    return AuthSuccessResponse()
+    return AuthSuccessResponse(message='Logout completed successfully.')
 
 
-@router.post('/refresh', response_model=TokenPair)
+@router.post('/refresh', response_model=TokenPair, responses=AUTH_ERROR_RESPONSES)
 async def refresh(
     response: Response,
     service: AuthServiceDep,
@@ -94,3 +119,31 @@ async def refresh(
     _, token_pair = await service.refresh(refresh_token)
     _set_refresh_cookie(response, token_pair.refresh_token)
     return token_pair
+
+
+@router.post(
+    '/confirm-account',
+    response_model=AuthSuccessResponse,
+    responses=AUTH_ERROR_RESPONSES,
+)
+async def confirm_account(
+    payload: ConfirmAccountRequest,
+    service: AuthServiceDep,
+):
+    await service.confirm_account(payload)
+    return AuthSuccessResponse(message='Account confirmed successfully.')
+
+
+@router.post(
+    '/change-password',
+    response_model=AuthSuccessResponse,
+    responses=combine_responses(AUTH_ERROR_RESPONSES, BAD_REQUEST_ERROR_RESPONSES),
+)
+async def change_password(
+    payload: ChangePasswordRequest,
+    background_tasks: BackgroundTasks,
+    service: AuthServiceDep,
+    current_user: Annotated[User, Security(get_current_user, scopes=['profile:read'])],
+):
+    await service.change_password(current_user, payload, background_tasks)
+    return AuthSuccessResponse(message='Password changed successfully.')
