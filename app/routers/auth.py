@@ -109,32 +109,6 @@ async def _parse_login_request(request: Request) -> LoginRequest:
     '/login',
     response_model=TokenPair,
     responses=AUTH_ERROR_RESPONSES,
-    openapi_extra={
-        'requestBody': {
-            'required': True,
-            'content': {
-                'application/json': {
-                    'schema': LoginRequest.model_json_schema(),
-                },
-                'application/x-www-form-urlencoded': {
-                    'schema': {
-                        'type': 'object',
-                        'required': ['username', 'password'],
-                        'properties': {
-                            'username': {
-                                'type': 'string',
-                                'format': 'email',
-                            },
-                            'password': {
-                                'type': 'string',
-                                'format': 'password',
-                            },
-                        },
-                    },
-                },
-            },
-        },
-    },
 )
 async def login(
     request: Request,
