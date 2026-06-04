@@ -29,15 +29,26 @@ class EmailNotificationBase(SQLModel):
 class EmailNotification(EmailNotificationBase, TimestampedModel, table=True):
     __tablename__ = 'email_notifications'
 
+    confirmation_token: str | None = Field(
+        default=None,
+        index=True,
+        unique=True,
+        max_length=255,
+    )
+    confirmation_token_expires_at: datetime | None = None
+
 
 class EmailNotificationCreate(EmailNotificationBase):
-    pass
+    confirmation_token: str | None = Field(default=None, max_length=255)
+    confirmation_token_expires_at: datetime | None = None
 
 
 class EmailNotificationUpdate(SQLModel):
     status: EmailNotificationStatus | None = None
     sent_at: datetime | None = None
     error_message: str | None = None
+    confirmation_token: str | None = Field(default=None, max_length=255)
+    confirmation_token_expires_at: datetime | None = None
 
 
 class EmailNotificationPublic(EmailNotificationBase, TimestampedPublicSchema):

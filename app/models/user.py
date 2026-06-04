@@ -1,4 +1,3 @@
-from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
@@ -27,6 +26,7 @@ class CourseTeacherLink(SQLModel, table=True):
         primary_key=True,
     )
 
+
 class UserStatus(str, Enum):
     ACTIVE = 'ACTIVE'
     BLOCKED = 'BLOCKED'
@@ -45,13 +45,6 @@ class User(UserBase, TimestampedModel, table=True):
     email: str = Field(index=True, unique=True, max_length=255)
     password_hash: str
     is_verified: bool = False
-    verification_token: str | None = Field(
-        default=None,
-        index=True,
-        unique=True,
-        max_length=255,
-    )
-    verification_token_expires_at: datetime | None = None
 
     roles: list[Role] = Relationship(
         back_populates='users',

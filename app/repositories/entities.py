@@ -51,15 +51,6 @@ class UserRepository(BaseRepository[User]):
         )
         return result.first()
 
-    async def get_by_verification_token(self, token: str) -> User | None:
-        result = await self.session.exec(
-            select(User)
-            .where(User.verification_token == token)
-            .options(selectinload(User.roles).selectinload(Role.permissions)),
-        )
-        return result.first()
-
-
 class RoleRepository(BaseRepository[Role]):
     model = Role
 
@@ -174,3 +165,9 @@ class PlagiarismReportRepository(BaseRepository[PlagiarismReport]):
 
 class EmailNotificationRepository(BaseRepository[EmailNotification]):
     model = EmailNotification
+
+    async def get_by_confirmation_token(self, token: str) -> EmailNotification | None:
+        result = await self.session.exec(
+            select(EmailNotification).where(EmailNotification.confirmation_token == token),
+        )
+        return result.first()

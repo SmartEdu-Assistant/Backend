@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
+import secrets
 from pathlib import Path
 from string import Template
 
@@ -27,8 +28,12 @@ class EmailNotificationService:
         self.templates_dir = Path(settings.email.templates_dir)
 
     async def queue_account_confirmation(self, user: User):
+        confirmation_token = secrets.token_urlsafe(32)
+        confirmation_token_expires_at = datetime.utcnow() + timedelta(
+            hours=settings.auth.verification_token_ttl_hours,
+        )
         confirmation_url = (
-            f'{settings.email.frontend_base_url}/confirm-account?token={user.verification_token}'
+            f'{settings.email.frontend_base_url}/confirm-account?token={confirmation_token}'
         )
         body = self._render_template(
             'confirm_account.html',
@@ -44,6 +49,8 @@ class EmailNotificationService:
                 template_name='confirm_account.html',
                 body=body,
                 user_id=user.id,
+                confirmation_token=confirmation_token,
+                confirmation_token_expires_at=confirmation_token_expires_at,
             ).model_dump(exclude_none=True),
         )
 

@@ -35,14 +35,6 @@ def upgrade() -> None:
         'users',
         sa.Column('is_verified', sa.Boolean(), nullable=False, server_default=sa.false()),
     )
-    op.add_column('users', sa.Column('verification_token', sa.String(length=255), nullable=True))
-    op.add_column('users', sa.Column('verification_token_expires_at', sa.DateTime(), nullable=True))
-    op.create_index(
-        op.f('ix_users_verification_token'),
-        'users',
-        ['verification_token'],
-        unique=True,
-    )
 
     op.create_table(
         'email_notifications',
@@ -57,18 +49,27 @@ def upgrade() -> None:
         sa.Column('user_id', sa.Integer(), nullable=True),
         sa.Column('sent_at', sa.DateTime(), nullable=True),
         sa.Column('error_message', sa.Text(), nullable=True),
+        sa.Column('confirmation_token', sa.String(length=255), nullable=True),
+        sa.Column('confirmation_token_expires_at', sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(['user_id'], ['users.id']),
         sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_index(
+        op.f('ix_email_notifications_confirmation_token'),
+        'email_notifications',
+        ['confirmation_token'],
+        unique=True,
     )
 
     op.alter_column('users', 'is_verified', server_default=None)
 
 
 def downgrade() -> None:
+    op.drop_index(
+        op.f('ix_email_notifications_confirmation_token'),
+        table_name='email_notifications',
+    )
     op.drop_table('email_notifications')
-    op.drop_index(op.f('ix_users_verification_token'), table_name='users')
-    op.drop_column('users', 'verification_token_expires_at')
-    op.drop_column('users', 'verification_token')
     op.drop_column('users', 'is_verified')
 
     bind = op.get_bind()

@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-import secrets
 from typing import Annotated
 
 from fastapi import Depends
@@ -36,10 +34,6 @@ class UserService(BaseService[User, UserCreate, UserUpdate]):
 
         user_data = payload.model_dump(exclude={'password'})
         user_data['password_hash'] = get_password_hash(payload.password)
-        user_data['verification_token'] = secrets.token_urlsafe(32)
-        user_data['verification_token_expires_at'] = datetime.utcnow() + timedelta(
-            hours=settings.auth.verification_token_ttl_hours,
-        )
         user_data['is_verified'] = False
         user = User(**user_data)
         user.roles = [public_role]

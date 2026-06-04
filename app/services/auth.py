@@ -14,7 +14,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models import RefreshSession, User
-from app.repositories import RefreshSessionRepository, UserRepository
+from app.repositories import EmailNotificationRepository, RefreshSessionRepository, UserRepository
 from app.schemas import (
     ChangePasswordRequest,
     ConfirmAccountRequest,
@@ -34,6 +34,10 @@ class AuthService:
             RefreshSessionRepository,
             Depends(RefreshSessionRepository),
         ],
+        email_notification_repository: Annotated[
+            EmailNotificationRepository,
+            Depends(EmailNotificationRepository),
+        ],
         email_notification_service: Annotated[
             EmailNotificationService,
             Depends(EmailNotificationService),
@@ -42,6 +46,7 @@ class AuthService:
     ) -> None:
         self.user_repository = user_repository
         self.refresh_session_repository = refresh_session_repository
+        self.email_notification_repository = email_notification_repository
         self.email_notification_service = email_notification_service
         self.user_service = user_service
 
@@ -98,20 +103,36 @@ class AuthService:
         return await self._get_user_from_payload(payload)
 
     async def confirm_account(self, payload: ConfirmAccountRequest) -> User:
-        user = await self.user_repository.get_by_verification_token(payload.token)
-        if user is None or user.verification_token_expires_at is None:
+        notification = await self.email_notification_repository.get_by_confirmation_token(
+            payload.token,
+        )
+        if notification is None or notification.confirmation_token_expires_at is None:
             raise AuthenticationError('Verification token is invalid')
-        if user.verification_token_expires_at < datetime.utcnow():
+        if notification.confirmation_token_expires_at < datetime.utcnow():
             raise AuthenticationError('Verification token has expired')
+        if notification.user_id is None:
+            raise AuthenticationError('Verification token is invalid')
 
-        return await self.user_repository.update(
-            user,
+        user = await self.user_repository.get(notification.user_id)
+        if user is None:
+            raise AuthenticationError('User not found for verification token')
+
+        if not user.is_verified:
+            user = await self.user_repository.update(
+                user,
+                {
+                    'is_verified': True,
+                },
+            )
+
+        await self.email_notification_repository.update(
+            notification,
             {
-                'is_verified': True,
-                'verification_token': None,
-                'verification_token_expires_at': None,
+                'confirmation_token': None,
+                'confirmation_token_expires_at': None,
             },
         )
+        return user
 
     async def change_password(
         self,
