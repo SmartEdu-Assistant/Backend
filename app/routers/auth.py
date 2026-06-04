@@ -1,9 +1,7 @@
 from datetime import timedelta
-from urllib.parse import parse_qs
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Cookie, Request, Response, Security, status
-from pydantic import ValidationError
+from fastapi import APIRouter, BackgroundTasks, Cookie, Response, Security, status
 
 from app.core.api_docs import (
     AUTH_ERROR_RESPONSES,
@@ -14,7 +12,6 @@ from app.core.api_docs import (
     combine_responses,
 )
 from app.core.config import settings
-from app.core.exceptions import DomainValidationError
 from app.dependencies.auth import get_current_user
 from app.dependencies.services import AuthServiceDep
 from app.models import User
@@ -79,43 +76,16 @@ async def register(
     )
 
 
-async def _parse_login_request(request: Request) -> LoginRequest:
-    content_type = request.headers.get('content-type', '').split(';', maxsplit=1)[0]
-
-    try:
-        if content_type == 'application/json':
-            payload = await request.json()
-            return LoginRequest.model_validate(payload)
-
-        if content_type == 'application/x-www-form-urlencoded':
-            form_data = parse_qs((await request.body()).decode('utf-8'))
-            username = form_data.get('username', [None])[0]
-            password = form_data.get('password', [None])[0]
-            return LoginRequest.model_validate(
-                {
-                    'email': username,
-                    'password': password,
-                },
-            )
-    except (ValueError, ValidationError) as exc:
-        raise DomainValidationError('Invalid login payload') from exc
-
-    raise DomainValidationError(
-        'Unsupported content type for login. Use application/json or application/x-www-form-urlencoded.',
-    )
-
-
 @router.post(
     '/login',
     response_model=TokenPair,
     responses=AUTH_ERROR_RESPONSES,
 )
 async def login(
-    request: Request,
+    payload: LoginRequest,
     response: Response,
     service: AuthServiceDep,
 ):
-    payload = await _parse_login_request(request)
     _, token_pair = await service.login(payload)
     _set_refresh_cookie(response, token_pair.refresh_token)
     return token_pair

@@ -43,6 +43,26 @@ Backend-часть проекта SmartEdu Assistant на `FastAPI`.
 | `AUTH__REFRESH_COOKIE_SAMESITE` | `str` | Значение `SameSite` для refresh-cookie | `lax` |
 | `AUTH__REFRESH_COOKIE_DOMAIN` | `str` | Домен refresh-cookie | `example.com` |
 | `AUTH__REFRESH_COOKIE_PATH` | `str` | Путь refresh-cookie | `/` |
+| `AUTH__VERIFICATION_TOKEN_TTL_HOURS` | `int` | Время жизни токена подтверждения аккаунта в часах | `24` |
+| `AUTH__REQUIRE_VERIFIED_ACCOUNT` | `bool` | Требовать подтверждение email перед логином | `true` |
+| `CORS__ALLOW_ORIGINS` | `list[str]` | Список допустимых origin для CORS | `["http://localhost:3000","http://127.0.0.1:3000"]` |
+| `CORS__ALLOW_CREDENTIALS` | `bool` | Разрешать отправку credentials в CORS-запросах | `true` |
+| `CORS__ALLOW_METHODS` | `list[str]` | Разрешенные HTTP-методы для CORS | `["GET","POST","PUT","PATCH","DELETE","OPTIONS"]` |
+| `CORS__ALLOW_HEADERS` | `list[str]` | Разрешенные HTTP-заголовки для CORS | `["*"]` |
+| `RATE_LIMIT__ENABLED` | `bool` | Включить ограничение частоты запросов | `true` |
+| `RATE_LIMIT__DEFAULT_LIMIT` | `str` | Лимит запросов по умолчанию | `100/minute` |
+| `SMTP__ENABLED` | `bool` | Включить отправку писем через SMTP | `false` |
+| `SMTP__HOST` | `str` | SMTP-хост | `smtp.example.com` |
+| `SMTP__PORT` | `int` | SMTP-порт | `587` |
+| `SMTP__USERNAME` | `str` | Логин SMTP-аккаунта | `user@example.com` |
+| `SMTP__PASSWORD` | `str` | Пароль SMTP-аккаунта | `change_me` |
+| `SMTP__FROM_EMAIL` | `str` | Email отправителя писем | `noreply@example.com` |
+| `SMTP__FROM_NAME` | `str` | Имя отправителя писем | `SmartEdu Assistant` |
+| `SMTP__STARTTLS` | `bool` | Использовать STARTTLS для SMTP | `true` |
+| `SMTP__SSL_TLS` | `bool` | Использовать SSL/TLS для SMTP | `false` |
+| `SMTP__VALIDATE_CERTS` | `bool` | Проверять SSL-сертификаты SMTP-сервера | `true` |
+| `EMAIL__TEMPLATES_DIR` | `str` | Путь к HTML-шаблонам писем | `app/templates/emails` |
+| `EMAIL__FRONTEND_BASE_URL` | `str` | Базовый URL frontend для ссылок в письмах | `http://localhost:3000` |
 | `RBAC__ADMIN_ROLE_NAME` | `str` | Название admin-роли | `admin` |
 | `RBAC__PUBLIC_ROLE_NAME` | `str` | Название public-роли | `public` |
 | `RBAC__TEACHER_ROLE_NAME` | `str` | Название teacher-роли | `teacher` |
