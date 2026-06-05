@@ -13,6 +13,7 @@ Backend-часть проекта SmartEdu Assistant на `FastAPI`.
 - Alembic
 - PyJWT
 - pwdlib
+- uv
 - Ruff
 - pre-commit
 
@@ -77,43 +78,15 @@ JWT-ключ можно сгенерировать так:
 openssl rand -hex 32
 ```
 
-## Запуск проекта
-
-### 1. Создать и активировать виртуальное окружение
+## Локальный запуск
 
 ```powershell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-```
-
-### 2. Установить зависимости
-
-```powershell
 pip install uv
 uv sync
-```
-
-### 3. Создать `.env`
-
-```powershell
 Copy-Item .env.example .env
-```
-
-### 4. Подготовить PostgreSQL
-
-```sql
-CREATE DATABASE smartedu;
-```
-
-### 5. Применить миграции
-
-```powershell
 uv run alembic upgrade head
-```
-
-### 6. Запустить приложение
-
-```powershell
 uv run uvicorn app.main:app --reload
 ```
 
@@ -122,23 +95,39 @@ uv run uvicorn app.main:app --reload
 - Swagger UI: `http://127.0.0.1:8000/docs`
 - ReDoc: `http://127.0.0.1:8000/redoc`
 
-## Миграции
+## Docker Compose
 
-Создать новую миграцию:
+### Сборка и публикация образа
+
+```powershell
+docker login
+docker build -t konstantinks7/smart_edu_assistant:latest .
+docker push konstantinks7/smart_edu_assistant:latest
+```
+
+### Запуск проекта
+
+```powershell
+Copy-Item .env.example .env
+docker compose up
+```
+
+### Подключение для фронтендеров
+
+1. Скопировать `.env.example` в `.env`.
+2. При необходимости изменить значения `AUTH__SECRET_KEY`, `RBAC__ADMIN_EMAIL`, `RBAC__ADMIN_PASSWORD`.
+3. Запустить `docker compose up`.
+
+После старта будут доступны:
+
+- `http://localhost/` — index-страница через `nginx`
+- `http://localhost/api/v1/...` — backend API через reverse proxy
+
+## Миграции
 
 ```powershell
 uv run alembic revision --autogenerate -m "add new entity"
-```
-
-Применить миграции:
-
-```powershell
 uv run alembic upgrade head
-```
-
-Откатить последнюю миграцию:
-
-```powershell
 uv run alembic downgrade -1
 ```
 
