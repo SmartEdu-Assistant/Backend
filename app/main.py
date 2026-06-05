@@ -17,8 +17,9 @@ from app.services.bootstrap import RBACBootstrapper
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    async with AsyncSessionFactory() as session:
-        await RBACBootstrapper(session).bootstrap()
+    if settings.rbac.bootstrap_on_startup:
+        async with AsyncSessionFactory() as session:
+            await RBACBootstrapper(session).bootstrap()
     yield
 
 

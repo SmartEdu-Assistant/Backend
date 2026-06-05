@@ -1,0 +1,17 @@
+.env
+.git
+.gitignore
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.venv
+venv
+__pycache__
+*.py[cod]
+*.sqlite3
+*.log
+Dockerfile
+compose.yaml
+practice_report
+tests
+.codex_analysis

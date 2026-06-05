@@ -93,6 +93,7 @@ class RbacSettings(BaseModel):
     admin_password: str = Field(min_length=8)
     admin_first_name: str = 'System'
     admin_last_name: str = 'Administrator'
+    bootstrap_on_startup: bool = True
 
 
 class Settings(BaseSettings):
