@@ -1,5 +1,3 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.middleware import SlowAPIMiddleware
@@ -9,18 +7,9 @@ from app.core.exception_handlers import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import RequestLoggingMiddleware
 from app.core.rate_limit import limiter
-from app.db import AsyncSessionFactory, metadata
+from app.db import metadata
 from app.routers.api import api_router
 from app.routers.health import router as health_router
-from app.services.bootstrap import RBACBootstrapper
-
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    if settings.rbac.bootstrap_on_startup:
-        async with AsyncSessionFactory() as session:
-            await RBACBootstrapper(session).bootstrap()
-    yield
 
 
 configure_logging()
@@ -31,7 +20,6 @@ app = FastAPI(
     version=settings.app.version,
     description=settings.app.description,
     debug=settings.app.debug,
-    lifespan=lifespan,
 )
 app.state.metadata = metadata
 app.state.limiter = limiter

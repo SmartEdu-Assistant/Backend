@@ -17,13 +17,6 @@ COPY pyproject.toml README.md ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --no-dev --no-editable --no-install-project
 
-COPY app ./app
-COPY migrations ./migrations
-COPY scripts ./scripts
-COPY alembic.ini ./
-COPY gunicorn.conf.py ./
-COPY run.py ./
-
 FROM python:3.13-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -40,18 +33,18 @@ RUN apt-get update \
     && useradd --system --uid 10001 --gid app --create-home --home-dir /home/app app
 
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
-COPY --from=builder --chown=app:app /app/app /app/app
-COPY --from=builder --chown=app:app /app/migrations /app/migrations
-COPY --from=builder --chown=app:app /app/scripts /app/scripts
-COPY --from=builder --chown=app:app /app/alembic.ini /app/alembic.ini
-COPY --from=builder --chown=app:app /app/gunicorn.conf.py /app/gunicorn.conf.py
-COPY --from=builder --chown=app:app /app/run.py /app/run.py
+COPY --chown=app:app app /app/app
+COPY --chown=app:app migrations /app/migrations
+COPY --chown=app:app scripts /app/scripts
+COPY --chown=app:app alembic.ini /app/alembic.ini
+COPY --chown=app:app gunicorn.conf.py /app/gunicorn.conf.py
+COPY --chown=app:app run.py /app/run.py
 
 USER app
 
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 \
-    CMD curl -fsS http://127.0.0.1:8000/health || exit 1
+    CMD curl -fsS http://127.0.0.1:8000/health
 
 CMD ["gunicorn", "app.main:app", "-c", "gunicorn.conf.py"]
